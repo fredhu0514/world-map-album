@@ -3,6 +3,7 @@ import { FixedMarker } from "@/components/FixedMarker/FixedMarker";
 export const FixedContainer = ({
     fixedMarkers,
     selectedMarker,
+    handleMarkerClick,
     setSelectedMarker,
     deletePin,
     isDeleteKeyPressed,
@@ -14,7 +15,10 @@ export const FixedContainer = ({
                     key={marker.id}
                     marker={marker}
                     isSelected={selectedMarker === marker}
-                    onClick={() => setSelectedMarker(marker)}
+                    onClick={() => {
+                        handleMarkerClick(marker);
+                        setSelectedMarker(marker);
+                    }}
                     onMouseOver={() => setSelectedMarker(marker)}
                     onMouseOut={() => setSelectedMarker(null)}
                     onDoubleClick={() => {

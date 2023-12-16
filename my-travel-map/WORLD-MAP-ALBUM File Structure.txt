@@ -1,0 +1,882 @@
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./jsconfig.json
+
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./tailwind.config.js
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic':
+          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+      },
+    },
+  },
+  plugins: [],
+}
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./next.config.js
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
+
+module.exports = nextConfig
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./package.json
+
+{
+  "name": "my-travel-map",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "leaflet": "^1.9.4",
+    "next": "14.0.4",
+    "next-auth": "^4.24.5",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-leaflet": "^4.2.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.4",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0"
+  }
+}
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./postcss.config.js
+
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/database/database.js
+
+const sqlite3 = require("sqlite3");
+const { open } = require("sqlite");
+
+async function openDb() {
+    return open({
+        filename: "./mydb.sqlite",
+        driver: sqlite3.Database,
+    });
+}
+
+export async function initializeDb() {
+    const db = await openDb();
+    await db.exec(`CREATE TABLE IF NOT EXISTS pins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lat REAL NOT NULL,
+    lng REAL NOT NULL,
+    PID TEXT NOT NULL,
+    _TYPE TEXT NOT NULL
+  )`);
+    return db;
+}
+
+export async function addPin({ newPin }) {
+    const db = await openDb();
+    await db.run(`INSERT INTO pins (lat, lng, PID, _TYPE) VALUES (?, ?, ?, ?)`, [
+        newPin.latlng.lat,
+        newPin.latlng.lng,
+        newPin.id,
+        newPin.type,
+    ]);
+}
+
+export async function getAllPins() {
+    const db = await openDb();
+    const rows = await db.all(`SELECT PID, lat, lng, _TYPE FROM pins`);
+
+    // Transform the data into the desired format
+    const pins = rows.map((row) => {
+        return {
+            id: row.PID,
+            latlng: {
+                lat: row.lat,
+                lng: row.lng,
+            },
+            type: row._TYPE,
+        };
+    });
+
+    return pins;
+}
+
+export async function deletePin(pinId) {
+    const db = await openDb();
+    await db.run(`DELETE FROM pins WHERE PID = ?`, pinId);
+}
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/layout.js
+
+import "./globals.css";
+import { Inter } from "next/font/google";
+import AuthProvider from "@/providers/AuthProvider";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata = {
+    title: " World Album",
+    description: "Precious travel memories~",
+};
+
+export default function RootLayout({ children }) {
+    return (
+        <html lang="en">
+            <body>
+                <AuthProvider>
+                    <div>{children}</div>
+                </AuthProvider>
+            </body>
+        </html>
+    );
+}
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/homepage.module.css
+
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/page.js
+
+import Link from "next/link";
+import styles from "./homepage.module.css";
+
+export default function Home() {
+  return (
+    <div>
+      <div className={styles.content}>
+        <Link href="/map">
+          Display Map
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/globals.css
+
+:root {
+  --bg: white;
+  --textColor: black;
+  --softBg: #f0f0f0;
+  --softTextColor: #626262;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dark {
+  --bg: #0f172a;
+  --textColor: #ddd;
+  --softBg: #1f273a;
+  --softTextColor: #a6a6a6;
+}
+
+.light {
+  --bg: white;
+  --textColor: black;
+  --softBg: #f0f0f0;
+  --softTextColor: #626262;
+}
+
+.container {
+  min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--textColor);
+}
+
+.wrapper {
+  max-width: 1536px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 80px;
+  padding-right: 80px;
+}
+
+@media screen and (max-width: 1536px) {
+  .wrapper {
+    max-width: 1366px;
+  }
+}
+@media screen and (max-width: 1280px) {
+  .wrapper {
+    max-width: 1024px;
+  }
+}
+@media screen and (max-width: 1024px) {
+  .wrapper {
+    max-width: 768px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+@media screen and (max-width: 768px) {
+  .wrapper {
+    max-width: 640px;
+  }
+}
+@media screen and (max-width: 640px) {
+  .wrapper {
+    max-width: 475px;
+  }
+}
+
+.ql-container{
+  font-size: 28px !important;
+}
+
+.quill > .ql-container > .ql-editor.ql-blank::before{
+  color: #b3b3b1;
+}
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/map/page.jsx
+
+"use client"
+// src/app/map/page.jsx
+import dynamic from 'next/dynamic';
+import React from 'react';
+
+const DynamicMapComponent = dynamic(
+  () => import('@/components/MapComponent/MapComponent'), 
+  { ssr: false } // 禁止服务器端渲染
+);
+
+export default function HomePage() {
+  return (
+    <div>
+      <DynamicMapComponent />
+    </div>
+  );
+}
+
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/map/map.module.css
+
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/api/pins/route.js
+
+import { NextResponse } from "next/server";
+import {
+    initializeDb,
+    getAllPins,
+    addPin,
+    deletePin,
+} from "@/database/database";
+
+export const GET = async (req, res) => {
+    try {
+        const db = await initializeDb();
+        console.log("GET ALL COOL");
+        const markers = await getAllPins();
+        return NextResponse.json(markers, { status: 200 });
+    } catch (err) {
+        console.log(err);
+        return NextResponse.json(
+            { message: "Failed to retrieve points." },
+            { status: 500 }
+        );
+    }
+};
+
+export const POST = async (req, res) => {
+    try {
+        console.log("POST PIN COOL");
+        await initializeDb();
+        const { newPin } = await req.json();
+        await addPin({ newPin }); // 这里应处理添加逻辑
+        return NextResponse.json(newPin, { status: 200 });
+    } catch (err) {
+        console.log(err);
+        return NextResponse.json(
+            { message: "Failed to add a point." },
+            { status: 500 }
+        );
+    }
+};
+
+export const DELETE = async (req, res) => {
+    try {
+        console.log("DELETE PIN COOL");
+        const db = await initializeDb();
+        const { pinId } = await req.json();
+        await deletePin(pinId); // 这里应处理添加逻辑
+        return NextResponse.json(pinId, { status: 200 });
+    } catch (err) {
+        console.log(err);
+        return NextResponse.json(
+            { message: "Failed to delete the point." },
+            { status: 500 }
+        );
+    }
+};
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/app/api/auth/[...nextauth]/route.js
+
+import { authOptions } from "@/utils/auth";
+import NextAuth from "next-auth";
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST, handler as DELETE };
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/providers/AuthProvider.jsx
+
+"use client";
+
+import { SessionProvider } from "next-auth/react";
+
+const AuthProvider = ({children}) => {
+  return (
+    <SessionProvider>{children}</SessionProvider>
+  )
+}
+
+export default AuthProvider;
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/utils/auth.js
+
+import { getServerSession } from "next-auth";
+
+export const authOptions = {
+    secret: process.env.NEXTAUTH_SECRET,
+    providers: [
+        // GoogleProvider({
+        //   clientId: process.env.GOOGLE_ID,
+        //   clientSecret: process.env.GOOGLE_SECRET,
+        // }),
+        // GithubProvider({
+        //   clientId: process.env.GITHUB_ID,
+        //   clientSecret: process.env.GITHUB_SECRET,
+        // }),
+    ],
+    //   adapter: PrismaAdapter(prisma),
+};
+
+export const getAuthSession = () => getServerSession(authOptions);
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/components/FixedMarker/FixedMarker.module.css
+
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/components/FixedMarker/FixedMarker.jsx
+
+export const FixedMarker = ({
+    marker,
+    isSelected,
+    onClick,
+    onMouseOver,
+    onMouseOut,
+    onDoubleClick,
+}) => {
+    return (
+        <div
+            key={marker.id}
+            style={{
+                position: "absolute",
+                left: `${marker.latlng.lat}px`,
+                top: `${marker.latlng.lng}px`,
+                transform: isSelected
+                    ? "translate(-15px, -52.5px)"
+                    : "translate(-10px, -35px)",
+                zIndex: 1000,
+            }}
+            onClick={onClick}
+            onMouseOver={onMouseOver}
+            onMouseOut={onMouseOut}
+            onDoubleClick={onDoubleClick}
+        >
+            <img
+                src={
+                    isSelected
+                        ? "/fixed-marker-icon-hover.png"
+                        : "/fixed-marker-icon.png"
+                }
+                alt="Fixed Pin"
+                style={{
+                    height: isSelected ? "61.5px" : "41px",
+                    width: isSelected ? "61.5px" : "41px",
+                }}
+            />
+        </div>
+    );
+};
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/components/MapComponent/MapComponent.jsx
+
+import React, { useState, useEffect } from "react";
+import L from "leaflet";
+import { FixedContainer } from "@/components/FixedContainer/FixedContainer";
+import {
+    MapContainer,
+    TileLayer,
+    Marker,
+    useMapEvents,
+    useMap,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+
+import styles from '@/components/MapComponent/MapComponent.module.css';
+
+const normalIcon = new L.Icon({
+    iconUrl: "/marker-icon.png",
+    shadowUrl: null,
+    iconSize: [41, 41],
+    iconAnchor: [10, 35],
+});
+
+const hoverIcon = new L.Icon({
+    iconUrl: "/marker-icon-hover.png", // 选中状态的图标
+    shadowUrl: null,
+    iconSize: [61.5, 61.5],
+    iconAnchor: [15, 52.5],
+});
+
+const getPins = async () => {
+    console.log("[INFO] GET IN RENDERING");
+    const res = await fetch("http://localhost:3000/api/pins", {
+        cache: "no-store",
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed");
+    }
+    console.log("[INFO] GET IN RENDERING OUT");
+
+    return res.json();
+};
+
+const MapComponent = () => {
+    const [markers, setMarkers] = useState([]);
+    const [fixedMarkers, setFixedMarkers] = useState([]); // 新增状态：存储视窗中的 fixed pins
+
+    const [selectedMarker, setSelectedMarker] = useState(null);
+
+    const [isPKeyPressed, setIsPKeyPressed] = useState(false);
+    const [isFKeyPressed, setIsFKeyPressed] = useState(false); // 新增状态：是否按下 'f' 键
+    const [isDeleteKeyPressed, setIsDeleteKeyPressed] = useState(false);
+
+    // Keep track of the markers
+    useEffect(() => {
+        getPins().then((receivedMarkers) => {
+            const mapPins = receivedMarkers.filter(
+                (marker) => marker.type === "map"
+            );
+            const fixedPins = receivedMarkers.filter(
+                (marker) => marker.type === "fixed"
+            );
+
+            setMarkers(mapPins);
+            setFixedMarkers(fixedPins);
+        });
+    }, []);
+
+    // "P" key event handler
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === "p" || e.key === "P") {
+                setIsPKeyPressed(true);
+            }
+        };
+
+        const handleKeyUp = (e) => {
+            if (e.key === "p" || e.key === "P") {
+                setIsPKeyPressed(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, []);
+
+    // "F" key event handler
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === "f" || e.key === "F") {
+                setIsFKeyPressed(true);
+            }
+        };
+
+        const handleKeyUp = (e) => {
+            if (e.key === "f" || e.key === "F") {
+                setIsFKeyPressed(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, []);
+
+    // "D" & "Delete" key event handler
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === "d" || e.key === "D" || e.key === "Delete") {
+                setIsDeleteKeyPressed(true);
+            }
+        };
+
+        const handleKeyUp = (e) => {
+            if (e.key === "d" || e.key === "D" || e.key === "Delete") {
+                setIsDeleteKeyPressed(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, []);
+
+    const addNewPin = (latlng, mapInstance) => {
+        const newPin = {
+            latlng,
+            id: Date.now(),
+        };
+
+        if (isFKeyPressed) {
+            // Use mapInstance to calculate pixel position
+            const point = mapInstance.latLngToContainerPoint(latlng);
+            // Add the fixed pin to the fixedMarkers array
+            const newFixedPin = {
+                latlng: {
+                    lat: point.x,
+                    lng: point.y,
+                },
+                id: newPin.id,
+                type: "fixed",
+            };
+
+            fetch("http://localhost:3000/api/pins", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ newPin: newFixedPin }),
+            })
+                .then((response) => response.json())
+                .then((addedPin) =>
+                    setFixedMarkers((prevFixedMarkers) => [
+                        ...prevFixedMarkers,
+                        addedPin,
+                    ])
+                )
+                .catch((error) =>
+                    console.error(
+                        "[ERROR] Failed to add a new fixed pin. Error: ",
+                        error
+                    )
+                );
+        } else if (isPKeyPressed) {
+            const newMapPin = { ...newPin, type: "map" };
+            fetch("http://localhost:3000/api/pins", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ newPin: newMapPin }),
+            })
+                .then((response) => response.json())
+                .then((addedPin) =>
+                    setMarkers((prevMarkers) => [...prevMarkers, addedPin])
+                )
+                .catch((error) =>
+                    console.error(
+                        "[ERROR] Failed to add a new map pin. Error: ",
+                        error
+                    )
+                );
+        }
+    };
+
+    const deletePin = async (pinToDelete) => {
+        console.log("[INFO] DELETE", pinToDelete.id, pinToDelete.type);
+        if (pinToDelete.type === "map") {
+            fetch("http://localhost:3000/api/pins", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ pinId: pinToDelete.id }),
+            })
+                .then((response) => response.json())
+                .then(() =>
+                    setMarkers((prevMarkers) =>
+                        prevMarkers.filter(
+                            (marker) => marker.id !== pinToDelete.id
+                        )
+                    )
+                )
+                .catch((error) =>
+                    console.error(
+                        "[ERROR] Failed to delete the pin{",
+                        pinToDelete.id,
+                        pinToDelete.type,
+                        "}. Error: :",
+                        error
+                    )
+                );
+        } else if (pinToDelete.type === "fixed") {
+            fetch("http://localhost:3000/api/pins", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ pinId: pinToDelete.id }),
+            })
+                .then((response) => response.json())
+                .then(() =>
+                    setFixedMarkers((prevMarkers) =>
+                        prevMarkers.filter(
+                            (marker) => marker.id !== pinToDelete.id
+                        )
+                    )
+                )
+                .catch((error) =>
+                    console.error(
+                        "[ERROR] Failed to delete the pin{",
+                        pinToDelete.id,
+                        pinToDelete.type,
+                        "}. Error: :",
+                        error
+                    )
+                );
+        } else {
+            console.log("[ERROR] Cannot delete this one on backend.");
+        }
+    };
+
+    const MapEvents = ({ onAddPin }) => {
+        const map = useMap();
+        useMapEvents({
+            click(e) {
+                onAddPin(e.latlng, map); // Pass both latlng and the map instance
+            },
+        });
+    };
+
+    return (
+        <div style={{ position: "relative" }}>
+            <MapContainer
+                center={[38, -95.0]}
+                zoom={5}
+                className={styles.mapContainer}
+            >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapEvents onAddPin={addNewPin} />
+                <div>
+                    {markers.map(
+                        (marker) => marker.type !== "fixed" && (
+                            <Marker
+                                key={marker.id}
+                                position={marker.latlng}
+                                icon={
+                                    selectedMarker === marker
+                                        ? hoverIcon
+                                        : normalIcon
+                                }
+                                eventHandlers={{
+                                    click: () => setSelectedMarker(marker),
+                                    mouseover: () => setSelectedMarker(marker),
+                                    mouseout: () => setSelectedMarker(null),
+                                    dblclick: () => {
+                                        if (isDeleteKeyPressed) {
+                                            deletePin(marker);
+                                        }
+                                    },
+                                }}
+                            />
+                        )
+                    )}
+                </div>
+            </MapContainer>
+            <FixedContainer
+                fixedMarkers={fixedMarkers}
+                selectedMarker={selectedMarker}
+                setSelectedMarker={setSelectedMarker}
+                deletePin={deletePin}
+                isDeleteKeyPressed={isDeleteKeyPressed}
+            />
+        </div>
+    );
+};
+
+export default MapComponent;
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/components/MapComponent/MapComponent.module.css
+
+/* MapComponent.module.css */
+.mapContainer {
+    height: 100vh;
+    width: 100vw;
+}
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/components/FixedContainer/FixedContainer.jsx
+
+import { FixedMarker } from "@/components/FixedMarker/FixedMarker";
+
+export const FixedContainer = ({
+    fixedMarkers,
+    selectedMarker,
+    setSelectedMarker,
+    deletePin,
+    isDeleteKeyPressed,
+}) => {
+    return (
+        <div>
+            {fixedMarkers.map((marker) => (
+                <FixedMarker
+                    key={marker.id}
+                    marker={marker}
+                    isSelected={selectedMarker === marker}
+                    onClick={() => setSelectedMarker(marker)}
+                    onMouseOver={() => setSelectedMarker(marker)}
+                    onMouseOut={() => setSelectedMarker(null)}
+                    onDoubleClick={() => {
+                        if (isDeleteKeyPressed) {
+                            deletePin(marker);
+                        }
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
+<<<<<<<<<<FILE START>>>>>>>>>>
+File Path: ./src/components/FixedContainer/FixedContainer.module.css
+
+
+<<<<<<<<<<FILE END>>>>>>>>>>
+
+
