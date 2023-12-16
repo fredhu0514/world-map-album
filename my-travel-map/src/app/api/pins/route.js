@@ -8,6 +8,7 @@ import {
 
 export const GET = async (req, res) => {
     try {
+        const db = await initializeDb();
         console.log("GET ALL COOL");
         const markers = await getAllPins();
         return NextResponse.json(markers, { status: 200 });
@@ -23,7 +24,7 @@ export const GET = async (req, res) => {
 export const POST = async (req, res) => {
     try {
         console.log("POST PIN COOL");
-        const db = await initializeDb();
+        await initializeDb();
         const { newPin } = await req.json();
         await addPin({ newPin }); // 这里应处理添加逻辑
         return NextResponse.json(newPin, { status: 200 });
@@ -41,7 +42,6 @@ export const DELETE = async (req, res) => {
         console.log("DELETE PIN COOL");
         const db = await initializeDb();
         const { pinId } = await req.json();
-        console.log(pinId);
         await deletePin(pinId); // 这里应处理添加逻辑
         return NextResponse.json(pinId, { status: 200 });
     } catch (err) {

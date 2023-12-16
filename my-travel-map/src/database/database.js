@@ -14,23 +14,25 @@ export async function initializeDb() {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     lat REAL NOT NULL,
     lng REAL NOT NULL,
-    PID TEXT NOT NULL
+    PID TEXT NOT NULL,
+    _TYPE TEXT NOT NULL
   )`);
     return db;
 }
 
 export async function addPin({ newPin }) {
     const db = await openDb();
-    await db.run(`INSERT INTO pins (lat, lng, PID) VALUES (?, ?, ?)`, [
+    await db.run(`INSERT INTO pins (lat, lng, PID, _TYPE) VALUES (?, ?, ?, ?)`, [
         newPin.latlng.lat,
         newPin.latlng.lng,
         newPin.id,
+        newPin.type,
     ]);
 }
 
 export async function getAllPins() {
     const db = await openDb();
-    const rows = await db.all(`SELECT PID, lat, lng FROM pins`);
+    const rows = await db.all(`SELECT PID, lat, lng, _TYPE FROM pins`);
 
     // Transform the data into the desired format
     const pins = rows.map((row) => {
@@ -40,6 +42,7 @@ export async function getAllPins() {
                 lat: row.lat,
                 lng: row.lng,
             },
+            type: row._TYPE,
         };
     });
 
