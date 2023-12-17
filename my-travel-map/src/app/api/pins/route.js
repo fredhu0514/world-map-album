@@ -4,6 +4,7 @@ import {
     getAllPins,
     addPin,
     deletePin,
+    updatePin,
 } from "@/database/database";
 
 export const GET = async (req, res) => {
@@ -40,7 +41,6 @@ export const POST = async (req, res) => {
 export const DELETE = async (req, res) => {
     try {
         console.log("DELETE PIN COOL");
-        const db = await initializeDb();
         const { pinId } = await req.json();
         await deletePin(pinId); // 这里应处理添加逻辑
         return NextResponse.json(pinId, { status: 200 });
@@ -48,6 +48,21 @@ export const DELETE = async (req, res) => {
         console.log(err);
         return NextResponse.json(
             { message: "Failed to delete the point." },
+            { status: 500 }
+        );
+    }
+};
+
+export const PUT = async (req, res) => {
+    try {
+        console.log("PUT PIN COOL");
+        const { pin } = await req.json();
+        await updatePin({ pin }); // 这里应处理添加逻辑
+        return NextResponse.json(pin, { status: 200 });
+    } catch (err) {
+        console.log(err);
+        return NextResponse.json(
+            { message: "Failed to update the point." },
             { status: 500 }
         );
     }

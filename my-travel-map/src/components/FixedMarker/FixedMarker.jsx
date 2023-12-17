@@ -1,3 +1,4 @@
+// components/FixedMarker/FixedMarker.jsx
 export const FixedMarker = ({
     marker,
     isSelected,
@@ -5,10 +6,13 @@ export const FixedMarker = ({
     onMouseOver,
     onMouseOut,
     onDoubleClick,
+    handleDragStart,
 }) => {
+
     return (
         <div
             key={marker.id}
+            draggable="true"
             style={{
                 position: "absolute",
                 left: `${marker.latlng.lat}px`,
@@ -22,6 +26,7 @@ export const FixedMarker = ({
             onMouseOver={onMouseOver}
             onMouseOut={onMouseOut}
             onDoubleClick={onDoubleClick}
+            onDragStart={(e) => handleDragStart(e, marker)}
         >
             <img
                 src={

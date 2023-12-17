@@ -1,3 +1,4 @@
+// components/FixedContainer/FixedContainer.jsx
 import { FixedMarker } from "@/components/FixedMarker/FixedMarker";
 
 export const FixedContainer = ({
@@ -7,11 +8,13 @@ export const FixedContainer = ({
     setSelectedMarker,
     deletePin,
     isDeleteKeyPressed,
+    handleDragStart,
 }) => {
     return (
         <div>
             {fixedMarkers.map((marker) => (
                 <FixedMarker
+                    draggable
                     key={marker.id}
                     marker={marker}
                     isSelected={selectedMarker === marker}
@@ -26,6 +29,7 @@ export const FixedContainer = ({
                             deletePin(marker);
                         }
                     }}
+                    handleDragStart={handleDragStart}
                 />
             ))}
         </div>

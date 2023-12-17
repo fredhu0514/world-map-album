@@ -69,6 +69,136 @@ const MapComponent = () => {
     const [selectedFixedPin, setSelectedFixedPin] = useState(null);
     const [linePairs, setLinePairs] = useState([]);
 
+    const [isMKeyPressed, setIsMKeyPressed] = useState(false);
+    const [draggingFixedPin, setDraggingFixedPin] = useState(null);
+    const [originalPosition, setOriginalPosition] = useState(null);
+
+    useEffect(() => {
+        // 键盘按下事件处理器
+        const handleKeyDown = (e) => {
+            if (e.key === "m" || e.key === "M") {
+                setIsMKeyPressed(true);
+            }
+        };
+
+        // 键盘释放事件处理器
+        const handleKeyUp = (e) => {
+            if (e.key === "m" || e.key === "M") {
+                setIsMKeyPressed(false);
+                if (draggingFixedPin) {
+                    console.log("Reset the fixed pin location.");
+                    // 如果松开 'm' 键，则重置 fixed pin 的位置
+                    setFixedMarkers((prevMarkers) =>
+                        prevMarkers.map((marker) =>
+                            marker.id === draggingFixedPin.id
+                                ? { ...marker, latlng: originalPosition }
+                                : marker
+                        )
+                    );
+                    setDraggingFixedPin(null);
+                    setOriginalPosition(null);
+                }
+            }
+        };
+
+        // 全局鼠标抬起事件处理器
+        const handleGlobalMouseUp = (e) => {
+            if (draggingFixedPin) {
+                // 拖拽结束时的逻辑
+                const newLatlng = {
+                    lat: e.clientX,
+                    lng: e.clientY,
+                };
+
+                // Backend-related code
+                fetch("http://localhost:3000/api/pins", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ 
+                        pin: {
+                            id: draggingFixedPin.id,
+                            latlng: newLatlng,
+                            type: "fixed",
+                        }, 
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then(() => {
+                        // 更新 fixed pin 位置
+                        setFixedMarkers((prevMarkers) =>
+                            prevMarkers.map((m) =>
+                                m.id === draggingFixedPin.id
+                                    ? { ...m, latlng: newLatlng }
+                                    : m
+                            )
+                        );
+                    })
+                    .then(() => {
+                        // 更新与该 fixed pin 相关联的线的位置
+                        setLinePairs((prevLinePairs) =>
+                            prevLinePairs.map((pair) => {
+                                if (pair.fixedPin.id === draggingFixedPin.id) {
+                                    return {
+                                        ...pair,
+                                        fixedPin: {
+                                            ...pair.fixedPin,
+                                            latlng: newLatlng,
+                                        },
+                                    };
+                                }
+                                return pair;
+                            })
+                        );
+                    })
+                    .catch((error) =>
+                        console.error(
+                            "[ERROR] Failed to update the pin{",
+                            draggingFixedPin.id,
+                            "}. Error: :",
+                            error
+                        )
+                    );
+                
+                
+                // 重置拖拽状态
+                setDraggingFixedPin(null);
+                setOriginalPosition(null);
+            }
+        };
+
+        // 添加键盘事件监听器
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+
+        // 添加全局鼠标抬起事件监听器（如果有拖拽进行中）
+        if (draggingFixedPin) {
+            window.addEventListener("mouseup", handleGlobalMouseUp);
+        }
+
+        // 清理函数：移除事件监听器
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+            window.removeEventListener("mouseup", handleGlobalMouseUp);
+        };
+    }, [draggingFixedPin, originalPosition, isMKeyPressed]);
+
+    // 在 FixedMarker 组件中
+    const handleDragStart = (e, marker) => {
+        e.preventDefault();
+        console.log("In handleDragStart");
+        if (isMKeyPressed && !draggingFixedPin) {
+            console.log("Rly manipulating it now.");
+            setOriginalPosition(marker.latlng);
+            setDraggingFixedPin(marker);
+            console.log("Out preset of manipulation now.");
+        }
+        console.log(draggingFixedPin);
+        console.log("RLY RLY OUT.");
+    };
+
     // Keep track of the markers
     useEffect(() => {
         const fetchPinsAndLines = async () => {
@@ -528,6 +658,7 @@ const MapComponent = () => {
                 setSelectedMarker={setSelectedMarker}
                 deletePin={deletePin}
                 isDeleteKeyPressed={isDeleteKeyPressed}
+                handleDragStart={handleDragStart}
             />
         </div>
     );

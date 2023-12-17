@@ -81,6 +81,14 @@ export async function addPin({ newPin }) {
     );
 }
 
+export async function updatePin({ pin }) {
+    const db = await openDb();
+    await db.run(
+        `UPDATE pins SET lat = ?, lng = ? WHERE PID = ?`,
+        [pin.latlng.lat, pin.latlng.lng, pin.id]
+    );
+}
+
 export async function getAllPins() {
     const db = await openDb();
     const rows = await db.all(`SELECT PID, lat, lng, _TYPE FROM pins`);
