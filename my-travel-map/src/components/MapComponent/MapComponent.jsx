@@ -73,6 +73,8 @@ const MapComponent = () => {
     const [draggingFixedPin, setDraggingFixedPin] = useState(null);
     const [originalPosition, setOriginalPosition] = useState(null);
 
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
     useEffect(() => {
         // 键盘按下事件处理器
         const handleKeyDown = (e) => {
@@ -166,6 +168,9 @@ const MapComponent = () => {
                 setDraggingFixedPin(null);
                 setOriginalPosition(null);
             }
+
+            // 停止追踪鼠标移动
+            window.removeEventListener('mousemove', handleMouseMove);
         };
 
         // 添加键盘事件监听器
@@ -188,15 +193,12 @@ const MapComponent = () => {
     // 在 FixedMarker 组件中
     const handleDragStart = (e, marker) => {
         e.preventDefault();
-        console.log("In handleDragStart");
         if (isMKeyPressed && !draggingFixedPin) {
             console.log("Rly manipulating it now.");
             setOriginalPosition(marker.latlng);
             setDraggingFixedPin(marker);
-            console.log("Out preset of manipulation now.");
         }
-        console.log(draggingFixedPin);
-        console.log("RLY RLY OUT.");
+        window.addEventListener('mousemove', handleMouseMove);
     };
 
     // Keep track of the markers
@@ -540,6 +542,11 @@ const MapComponent = () => {
         });
     };
 
+    const handleMouseMove = (e) => {
+        setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    
+
     const LineDrawer = ({ linePairs }) => {
         const map = useMap();
         const [updatedLinePairs, setUpdatedLinePairs] = useState([]);
@@ -659,6 +666,8 @@ const MapComponent = () => {
                 deletePin={deletePin}
                 isDeleteKeyPressed={isDeleteKeyPressed}
                 handleDragStart={handleDragStart}
+                draggingFixedPin={draggingFixedPin}
+                mousePosition={mousePosition}
             />
         </div>
     );

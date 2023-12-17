@@ -9,6 +9,8 @@ export const FixedContainer = ({
     deletePin,
     isDeleteKeyPressed,
     handleDragStart,
+    draggingFixedPin,
+    mousePosition,
 }) => {
     return (
         <div>
@@ -30,6 +32,8 @@ export const FixedContainer = ({
                         }
                     }}
                     handleDragStart={handleDragStart}
+                    draggingFixedPin={draggingFixedPin}
+                    mousePosition={mousePosition}
                 />
             ))}
         </div>
