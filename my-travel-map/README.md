@@ -2,13 +2,13 @@
 
 
 # Pocket Wolrd Map Album
-## Basic Comcepts
+## Basic Comcepts 🗺️
 - I want to hang a map on the wall of my apartment. Then, use pins to mark the places we've been to and attach photos we took at those locations with the pins. Also, we can connect the pins with red string. However, since the apartment is rented, we can't damage the walls, so I came up with this project. The final result is presented with a projector. 
 
-### Map Pin / Red Pin
+### Map Pin / Red Pin 📌
 - Pins that follow the movement of the map.
 
-### Fixed Pin / Yellow Pin
+### Fixed Pin / Yellow Pin 📌 (image it's yellow lol)
 - Pins that stays on an absolute location.
 
 ## How to run?
