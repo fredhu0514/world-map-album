@@ -8,6 +8,7 @@ import {
     useMapEvents,
     useMap,
 } from "react-leaflet";
+import { useKeyPress } from "@/hooks/useKeyPress";
 import "leaflet/dist/leaflet.css";
 
 import styles from "@/components/MapComponent/MapComponent.module.css";
@@ -26,31 +27,10 @@ const hoverIcon = new L.Icon({
     iconAnchor: [15, 52.5],
 });
 
-const getPins = async () => {
-    console.log("[INFO] GET PINS IN RENDERING");
-    const res = await fetch("http://localhost:3000/api/pins", {
-        cache: "no-store",
-    });
-
-    if (!res.ok) {
-        throw new Error("Failed");
-    }
-    console.log("[INFO] GET PINS IN RENDERING OUT");
-
-    return res.json();
-};
-
-const getLines = async () => {
-    console.log("[INFO] GET LINEs IN RENDERING");
-    const res = await fetch("http://localhost:3000/api/lines", {
-        cache: "no-store",
-    });
-
-    if (!res.ok) {
-        throw new Error("Failed");
-    }
-    console.log("[INFO] GET LINES IN RENDERING OUT");
-
+// Get All APIs
+const fetchApi = async (url) => {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch");
     return res.json();
 };
 
@@ -59,11 +39,6 @@ const MapComponent = () => {
     const [fixedMarkers, setFixedMarkers] = useState([]);
 
     const [selectedMarker, setSelectedMarker] = useState(null);
-
-    const [isPKeyPressed, setIsPKeyPressed] = useState(false);
-    const [isFKeyPressed, setIsFKeyPressed] = useState(false);
-    const [isCKeyPressed, setIsCKeyPressed] = useState(false);
-    const [isDeleteKeyPressed, setIsDeleteKeyPressed] = useState(false);
 
     const [selectedMapPin, setSelectedMapPin] = useState(null);
     const [selectedFixedPin, setSelectedFixedPin] = useState(null);
@@ -75,6 +50,74 @@ const MapComponent = () => {
 
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
+    const handleKeyPress = (key) => {
+        switch (key) {
+            case "p":
+                break;
+            case "f":
+                break;
+            case "delete":
+                break;
+            case "c":
+                break;
+            default:
+            // Other key actions
+        }
+    };
+
+    const handleKeyRelease = (key) => {
+        switch (key) {
+            case "p":
+                break;
+            case "f":
+                break;
+            case "delete":
+                break;
+            case "c":
+                setSelectedMapPin(null);
+                setSelectedFixedPin(null);
+                break;
+            default:
+            // Other key actions
+        }
+        // Other key release actions if needed
+    };
+
+    const keyMap = {
+        d: "d",
+        D: "d",
+        c: "c",
+        C: "c",
+        f: "f",
+        F: "f",
+        d: "delete",
+        D: "delete",
+        backspace: "delete",
+        Backspace: "delete",
+        delete: "delete",
+        Delete: "delete",
+    };
+
+    const keyStates = useKeyPress(
+        ["p", "f", "delete", "c"],
+        keyMap,
+        handleKeyPress,
+        handleKeyRelease
+    );
+
+    // Use keyStates directly
+    const {
+        p: isPKeyPressed,
+        f: isFKeyPressed,
+        c: isCKeyPressed,
+        delete: isDeleteKeyPressed,
+    } = keyStates;
+
+    /*
+        Use Effects
+    */
+
+    // Use isMKeyPressed to modify the dragging state
     useEffect(() => {
         // 键盘按下事件处理器
         const handleKeyDown = (e) => {
@@ -118,12 +161,12 @@ const MapComponent = () => {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         pin: {
                             id: draggingFixedPin.id,
                             latlng: newLatlng,
                             type: "fixed",
-                        }, 
+                        },
                     }),
                 })
                     .then((response) => response.json())
@@ -162,15 +205,14 @@ const MapComponent = () => {
                             error
                         )
                     );
-                
-                
+
                 // 重置拖拽状态
                 setDraggingFixedPin(null);
                 setOriginalPosition(null);
             }
 
             // 停止追踪鼠标移动
-            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener("mousemove", handleMouseMove);
         };
 
         // 添加键盘事件监听器
@@ -190,23 +232,14 @@ const MapComponent = () => {
         };
     }, [draggingFixedPin, originalPosition, isMKeyPressed]);
 
-    // 在 FixedMarker 组件中
-    const handleDragStart = (e, marker) => {
-        e.preventDefault();
-        if (isMKeyPressed && !draggingFixedPin) {
-            console.log("Rly manipulating it now.");
-            setOriginalPosition(marker.latlng);
-            setDraggingFixedPin(marker);
-        }
-        window.addEventListener('mousemove', handleMouseMove);
-    };
-
     // Keep track of the markers
     useEffect(() => {
         const fetchPinsAndLines = async () => {
             try {
                 // Fetch and set pins
-                const receivedMarkers = await getPins();
+                const receivedMarkers = await fetchApi(
+                    "http://localhost:3000/api/pins"
+                );
                 const mapPins = receivedMarkers.filter(
                     (marker) => marker.type === "map"
                 );
@@ -218,7 +251,9 @@ const MapComponent = () => {
                 setFixedMarkers(fixedPins);
 
                 // Fetch and process lines
-                const receivedLines = await getLines();
+                const receivedLines = await fetchApi(
+                    "http://localhost:3000/api/lines"
+                );
                 const lines = receivedLines.map((line) => {
                     return {
                         mapPin: mapPins.find(
@@ -238,100 +273,9 @@ const MapComponent = () => {
         fetchPinsAndLines();
     }, []);
 
-    // "P" key event handler
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === "p" || e.key === "P") {
-                setIsPKeyPressed(true);
-            }
-        };
-
-        const handleKeyUp = (e) => {
-            if (e.key === "p" || e.key === "P") {
-                setIsPKeyPressed(false);
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-        };
-    }, []);
-
-    // "F" key event handler
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === "f" || e.key === "F") {
-                setIsFKeyPressed(true);
-            }
-        };
-
-        const handleKeyUp = (e) => {
-            if (e.key === "f" || e.key === "F") {
-                setIsFKeyPressed(false);
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-        };
-    }, []);
-
-    // "D" & "Delete" key event handler
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === "d" || e.key === "D" || e.key === "Delete") {
-                setIsDeleteKeyPressed(true);
-            }
-        };
-
-        const handleKeyUp = (e) => {
-            if (e.key === "d" || e.key === "D" || e.key === "Delete") {
-                setIsDeleteKeyPressed(false);
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-        };
-    }, []);
-
-    // "C" key event handler (for connect map pin & fixed pin)
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === "c" || e.key === "C") {
-                setIsCKeyPressed(true);
-            }
-        };
-
-        const handleKeyUp = (e) => {
-            if (e.key === "c" || e.key === "C") {
-                setIsCKeyPressed(false);
-                // 重置 selectedMapPin 和 selectedFixedPin
-                setSelectedMapPin(null);
-                setSelectedFixedPin(null);
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-        };
-    }, []);
+    /*
+        Event Handlers 
+    */
 
     const handleMarkerClick = (marker) => {
         if (!isCKeyPressed) return;
@@ -376,6 +320,34 @@ const MapComponent = () => {
         }
     };
 
+    const handleMouseMove = (e) => {
+        setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    // Used in FixedMarker component
+    const handleDragStart = (e, marker) => {
+        e.preventDefault();
+        if (isMKeyPressed && !draggingFixedPin) {
+            console.log("Rly manipulating it now.");
+            setOriginalPosition(marker.latlng);
+            setDraggingFixedPin(marker);
+        }
+        window.addEventListener("mousemove", handleMouseMove);
+    };
+
+    // Handler of useMapEvents
+    const MapEvents = ({ onAddPin }) => {
+        const map = useMap();
+        useMapEvents({
+            click(e) {
+                onAddPin(e.latlng, map); // Pass both latlng and the map instance
+            },
+        });
+    };
+
+    /*
+        Renderings
+    */
     const calculateScreenPosition = (pin, mapInstance) => {
         if (pin.type === "map") {
             const point = mapInstance.latLngToContainerPoint(pin.latlng);
@@ -390,6 +362,78 @@ const MapComponent = () => {
         }
     };
 
+    const LineDrawer = ({ linePairs }) => {
+        const map = useMap();
+        const [updatedLinePairs, setUpdatedLinePairs] = useState([]);
+
+        useEffect(() => {
+            const updateLines = () => {
+                const newLinePairs = linePairs.map((pair) => {
+                    return {
+                        ...pair,
+                        mapPinPosition: calculateScreenPosition(
+                            pair.mapPin,
+                            map
+                        ),
+                        fixedPinPosition: calculateScreenPosition(
+                            pair.fixedPin,
+                            map
+                        ),
+                    };
+                });
+
+                // 确保所有位置都已计算
+                if (
+                    newLinePairs.every(
+                        (pair) => pair.mapPinPosition && pair.fixedPinPosition
+                    )
+                ) {
+                    setUpdatedLinePairs(newLinePairs);
+                }
+            };
+
+            map.on("move", updateLines);
+            map.on("zoom", updateLines);
+
+            // 初始更新
+            updateLines();
+
+            return () => {
+                map.off("move", updateLines);
+                map.off("zoom", updateLines);
+            };
+        }, [map, linePairs]);
+
+        return (
+            <svg
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    height: "100%",
+                    width: "100%",
+                    zIndex: 1000,
+                    pointerEvents: "none",
+                }}
+            >
+                {updatedLinePairs.map((pair, index) => (
+                    <line
+                        key={index}
+                        x1={pair.mapPinPosition?.x}
+                        y1={pair.mapPinPosition?.y}
+                        x2={pair.fixedPinPosition?.x}
+                        y2={pair.fixedPinPosition?.y}
+                        stroke="#9E1030"
+                        strokeWidth="2"
+                    />
+                ))}
+            </svg>
+        );
+    };
+
+    /*
+        APIs Called in Event Handlers
+    */
     const addNewPin = (latlng, mapInstance) => {
         const newPin = {
             latlng,
@@ -533,89 +577,7 @@ const MapComponent = () => {
         }
     };
 
-    const MapEvents = ({ onAddPin }) => {
-        const map = useMap();
-        useMapEvents({
-            click(e) {
-                onAddPin(e.latlng, map); // Pass both latlng and the map instance
-            },
-        });
-    };
-
-    const handleMouseMove = (e) => {
-        setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    
-
-    const LineDrawer = ({ linePairs }) => {
-        const map = useMap();
-        const [updatedLinePairs, setUpdatedLinePairs] = useState([]);
-
-        useEffect(() => {
-            const updateLines = () => {
-                const newLinePairs = linePairs.map((pair) => {
-                    return {
-                        ...pair,
-                        mapPinPosition: calculateScreenPosition(
-                            pair.mapPin,
-                            map
-                        ),
-                        fixedPinPosition: calculateScreenPosition(
-                            pair.fixedPin,
-                            map
-                        ),
-                    };
-                });
-
-                // 确保所有位置都已计算
-                if (
-                    newLinePairs.every(
-                        (pair) => pair.mapPinPosition && pair.fixedPinPosition
-                    )
-                ) {
-                    setUpdatedLinePairs(newLinePairs);
-                }
-            };
-
-            map.on("move", updateLines);
-            map.on("zoom", updateLines);
-
-            // 初始更新
-            updateLines();
-
-            return () => {
-                map.off("move", updateLines);
-                map.off("zoom", updateLines);
-            };
-        }, [map, linePairs]);
-
-        return (
-            <svg
-                style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    height: "100%",
-                    width: "100%",
-                    zIndex: 1000,
-                    pointerEvents: "none",
-                }}
-            >
-                {updatedLinePairs.map((pair, index) => (
-                    <line
-                        key={index}
-                        x1={pair.mapPinPosition?.x}
-                        y1={pair.mapPinPosition?.y}
-                        x2={pair.fixedPinPosition?.x}
-                        y2={pair.fixedPinPosition?.y}
-                        stroke="#9E1030"
-                        strokeWidth="2"
-                    />
-                ))}
-            </svg>
-        );
-    };
-
+    // HTML Renderings
     return (
         <div style={{ position: "relative" }}>
             <MapContainer
