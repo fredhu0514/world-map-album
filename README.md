@@ -40,3 +40,5 @@ npm run dev
 
 ### How to connect a map pin to a fixed pin?
 - Press "c" or "C" and hold it, click one red pin and one yellow pin. If you release "c" key, the connection is cancelled.
+
+## Blog
