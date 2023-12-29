@@ -24,6 +24,13 @@ export async function initializeDb() {
         map_pin_pid TEXT NOT NULL,
         fixed_pin_pid TEXT NOT NULL
     )`);
+    await db.exec(`
+    CREATE TABLE IF NOT EXISTS blog (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pid REAL NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL
+    )`);
     return db;
 }
 
@@ -113,3 +120,37 @@ export async function deletePin(pinId) {
     await db.run(`DELETE FROM pins WHERE PID = ?`, pinId);
     deleteLinesRelatedToPin(pinId);
 }
+
+/* 
+    BLOG POSTS
+*/
+
+// Function to add a new blog post
+export async function addBlog(pid, title, description) {
+    const db = await openDb();
+    const result = await db.run(
+        `INSERT INTO blog_posts (pid, title, description) VALUES (?, ?, ?)`,
+        [pid, title, description]
+    );
+    return { id: result.lastID };  // Return the id of the inserted blog post
+}
+
+// Function to retrieve all blog posts
+export async function getAllBlogs() {
+    const db = await openDb();
+    const rows = await db.all(`SELECT id, pid, title, description FROM blog_posts`);
+    return rows; // Return the rows as is, which are already in the desired format
+}
+
+// Function to delete a blog post by id
+export async function deleteBlog(blogId) {
+    const db = await openDb();
+    await db.run(`DELETE FROM blog_posts WHERE id = ?`, [blogId]);
+}
+
+// Function to delete all blog posts related to a specific pin
+export async function deleteBlogsRelatedToPin(pinId) {
+    const db = await openDb();
+    await db.run(`DELETE FROM blog_posts WHERE pid = ?`, [pinId]);
+}
+
