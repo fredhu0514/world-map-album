@@ -129,7 +129,7 @@ export async function deletePin(pinId) {
 export async function addBlog(pid, title, description) {
     const db = await openDb();
     const result = await db.run(
-        `INSERT INTO blog_posts (pid, title, description) VALUES (?, ?, ?)`,
+        `INSERT INTO blog (pid, title, description) VALUES (?, ?, ?)`,
         [pid, title, description]
     );
     return { id: result.lastID };  // Return the id of the inserted blog post
@@ -138,19 +138,19 @@ export async function addBlog(pid, title, description) {
 // Function to retrieve all blog posts
 export async function getAllBlogs() {
     const db = await openDb();
-    const rows = await db.all(`SELECT id, pid, title, description FROM blog_posts`);
+    const rows = await db.all(`SELECT id, pid, title, description FROM blog`);
     return rows; // Return the rows as is, which are already in the desired format
 }
 
 // Function to delete a blog post by id
 export async function deleteBlog(blogId) {
     const db = await openDb();
-    await db.run(`DELETE FROM blog_posts WHERE id = ?`, [blogId]);
+    await db.run(`DELETE FROM blog WHERE id = ?`, [blogId]);
 }
 
 // Function to delete all blog posts related to a specific pin
 export async function deleteBlogsRelatedToPin(pinId) {
     const db = await openDb();
-    await db.run(`DELETE FROM blog_posts WHERE pid = ?`, [pinId]);
+    await db.run(`DELETE FROM blog WHERE pid = ?`, [pinId]);
 }
 
