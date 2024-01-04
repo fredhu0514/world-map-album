@@ -136,7 +136,6 @@ export async function addBlog(pid, title, description) {
     return { id: result.lastID };  // Return the id of the inserted blog post
  }
  
- 
  // Function to retrieve all blog posts
  export async function getBlogById(id) {
     const db = await openDb();
@@ -144,17 +143,11 @@ export async function addBlog(pid, title, description) {
     return row; // Return the single row, which is the blog post with the given pid
  }
  
- 
- 
- 
  // Function to delete a blog post by pid
  export async function deleteBlog(id) {
     const db = await openDb();
     await db.run(`DELETE FROM blog WHERE id = ?`, [id]);
  }
- 
- 
- 
  
  // Function to update a blog post
  export async function updateBlog(id, title, description) {
@@ -165,18 +158,19 @@ export async function addBlog(pid, title, description) {
     );
     return { updated: result.changes > 0 };  // Return an object indicating if any row was updated
  }
+
  // Function to get all blogs
  export async function getAllBlog() {
     const db = await openDb();
-    const rows = await db.all(`SELECT id, pid, title, description FROM blog`);
+    // Select only the id, pid, and title columns from the blog table
+    const rows = await db.all(`SELECT id, pid, title FROM blog`);
     
-    // Transform the data into the desired format
+    // Transform the data to include only id, pid, and title
     const blogPosts = rows.map((row) => {
         return {
             id: row.id,
             pid: row.pid,
-            title: row.title,
-            description: row.description,
+            title: row.title
         };
     });
     
