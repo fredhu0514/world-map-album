@@ -24,6 +24,14 @@ export async function initializeDb() {
         map_pin_pid TEXT NOT NULL,
         fixed_pin_pid TEXT NOT NULL
     )`);
+    await db.exec(`
+    CREATE TABLE IF NOT EXISTS blog (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pid REAL NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL
+    )`);
+ 
     return db;
 }
 
@@ -112,4 +120,59 @@ export async function deletePin(pinId) {
     const db = await openDb();
     await db.run(`DELETE FROM pins WHERE PID = ?`, pinId);
     deleteLinesRelatedToPin(pinId);
+}
+/*
+   BLOG POSTS
+*/
+
+
+// Function to add a new blog post
+export async function addBlog(pid, title, description) {
+    const db = await openDb();
+    const result = await db.run(
+        `INSERT INTO blog (pid, title, description) VALUES (?, ?, ?)`,
+        [pid, title, description]
+    );
+    return { id: result.lastID };  // Return the id of the inserted blog post
+ }
+ 
+ // Function to retrieve all blog posts
+ export async function getBlogById(id) {
+    const db = await openDb();
+    const row = await db.get(`SELECT id, pid, title, description FROM blog WHERE id = ?`, [id]);
+    return row; // Return the single row, which is the blog post with the given pid
+ }
+ 
+ // Function to delete a blog post by pid
+ export async function deleteBlog(id) {
+    const db = await openDb();
+    await db.run(`DELETE FROM blog WHERE id = ?`, [id]);
+ }
+ 
+ // Function to update a blog post
+ export async function updateBlog(id, title, description) {
+    const db = await openDb();
+    const result = await db.run(
+        `UPDATE blog SET title = ?, description = ? WHERE id = ?`,
+        [title, description, id]
+    );
+    return { updated: result.changes > 0 };  // Return an object indicating if any row was updated
+ }
+
+ // Function to get all blogs
+ export async function getAllBlog() {
+    const db = await openDb();
+    // Select only the id, pid, and title columns from the blog table
+    const rows = await db.all(`SELECT id, pid, title FROM blog`);
+    
+    // Transform the data to include only id, pid, and title
+    const blogPosts = rows.map((row) => {
+        return {
+            id: row.id,
+            pid: row.pid,
+            title: row.title
+        };
+    });
+    
+    return blogPosts;
 }
