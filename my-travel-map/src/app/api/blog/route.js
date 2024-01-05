@@ -3,13 +3,14 @@ import {
    initializeDb,
    addBlog,
 } from "@/database/database";
+
 export const POST = async (req, res) => {
     try {
         await initializeDb();
         console.log("POST NEW BLOG POST");
         const { pid, title, description } = await req.json();
-        const newBlog = await addBlog(pid, title, description);
-        return NextResponse.json({ newBlog }, { status: 201 });
+        const newBlogId = await addBlog(pid, title, description);
+        return NextResponse.json({ newBlogId }, { status: 201 });
     } catch (err) {
         console.log(err);
         return NextResponse.json(
