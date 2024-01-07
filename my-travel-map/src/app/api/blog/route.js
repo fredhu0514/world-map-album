@@ -4,9 +4,29 @@ import {
    getAllBlog,
    addBlog,
    updateBlog,
-   deleteBlog
+   deleteBlog,
+   getBlogById
 } from "@/database/database";
 
+export const GETbyid = async (req, res) => {
+    try {
+        const { searchParams } = new URL(req.url);
+        await initializeDb();
+        
+        const blog = await getBlogById(searchParams.get('id'))
+        console.log(blog)
+        return NextResponse.json(
+            { blog },
+            { status: 201 }
+        );
+    } catch (err) {
+        console.log(err);
+        return NextResponse.json(
+            { message: "Blog ID does not exist." },
+            { status: 500 }
+        );
+    }
+ };
 // In the future, this function will be getAllBlogs by user ID.
 export const GET = async (req, res) => {
     try {
