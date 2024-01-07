@@ -1,0 +1,40 @@
+.panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100%;
+    transition: width 0.3s;
+    z-index: 1001;
+    background: rgba(255, 255, 255, 0.9);
+    width: 0; /* 默认关闭 */
+}
+
+.open {
+    width: 33%; /* 展开状态的宽度 */
+}
+
+.button {
+    display: none; /* 默认隐藏 */
+    position: fixed;
+    top: 45%;
+    width: 40px;
+    height: 10%;
+    border-radius: 20px 0 0 20px;
+    transition: right 0.3s;
+    text-align: center;
+    line-height: 40px;
+    font-size: 20px;
+    border: none;
+    background: #ddd;
+    cursor: pointer;
+    z-index: 1002;
+}
+
+.show {
+    display: block; /* 显示按钮 */
+}
+
+.content {
+    padding: 20px;
+    overflow-y: auto;
+}

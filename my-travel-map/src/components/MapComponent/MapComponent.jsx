@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { FixedContainer } from "@/components/FixedContainer/FixedContainer";
+import { FoldablePanel } from "@/components/FoldablePanel/FoldablePanel";
+import { SearchBar } from "@/components/SearchBar/SearchBar";
+import { geoCodeLocation } from "@/utils/geoCodeLocation";
+
 import {
     MapContainer,
     TileLayer,
@@ -35,6 +39,8 @@ const fetchApi = async (url) => {
 };
 
 const MapComponent = () => {
+    const mapRef = useRef(null);
+
     const [markers, setMarkers] = useState([]);
     const [fixedMarkers, setFixedMarkers] = useState([]);
 
@@ -49,6 +55,8 @@ const MapComponent = () => {
     const [originalPosition, setOriginalPosition] = useState(null);
 
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+    const [searchedLocation, setSearchedLocation] = useState(null);
 
     const handleKeyPress = (key) => {
         switch (key) {
@@ -81,6 +89,51 @@ const MapComponent = () => {
             // Other key actions
         }
         // Other key release actions if needed
+    };
+
+    // 在地图相关的部分，根据 searchedLocation 添加标记
+    useEffect(() => {
+        if (searchedLocation) {
+            // 添加一个标记到地图上
+            // 例如使用 L.marker
+            console.log('useEffect', searchedLocation);
+        }
+    }, [searchedLocation]);
+
+    const handleSearch = async (searchTerm) => {
+        try {
+            const result = await geoCodeLocation(searchTerm);
+            setSearchedLocation(result);
+            console.log('Ref', mapRef);
+            if (mapRef.current) {
+                let zoomLevel;
+                switch(result.type) {
+                    case 'tertiary':
+                        zoomLevel = 20;
+                        break;
+                    case 'landmark':
+                        zoomLevel = 17;
+                        break;
+                    case 'research_institute':
+                    case 'university':
+                    case 'aerodrome': 
+                    case 'park': 
+                        zoomLevel = 16;
+                        break;
+                    case 'water':
+                        zoomLevel = 13;
+                        break;
+                    case 'administrative':
+                        zoomLevel = 12;
+                        break;
+                    default:
+                        zoomLevel = 15; // default zoom level
+                }
+                mapRef.current.setView([result.lat, result.lng], zoomLevel);
+            }
+        } catch (error) {
+            console.error('Error during location search:', error);
+        }
     };
 
     const keyMap = {
@@ -580,7 +633,13 @@ const MapComponent = () => {
     // HTML Renderings
     return (
         <div style={{ position: "relative" }}>
+            <FoldablePanel>
+                <SearchBar onSearch={handleSearch} />
+            </FoldablePanel>
             <MapContainer
+                ref={(ref) => { 
+                    if (ref) mapRef.current = ref; 
+                }}
                 center={[38, -95.0]}
                 zoom={5}
                 className={styles.mapContainer}
