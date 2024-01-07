@@ -1,47 +1,45 @@
 import { NextResponse } from "next/server";
 import {
    initializeDb,
-   getAllBlog,
+   // getAllBlog,
+   getBlogById,
    addBlog,
    updateBlog,
    deleteBlog,
-   getBlogById
 } from "@/database/database";
 
-export const GETbyid = async (req, res) => {
+export const GET = async (req, res) => {
     try {
         const { searchParams } = new URL(req.url);
-        await initializeDb();
-        
-        const blog = await getBlogById(searchParams.get('id'))
-        console.log(blog)
+        const blog = await getBlogById(searchParams.get('blogId'));
         return NextResponse.json(
-            { blog },
-            { status: 201 }
+            blogs,
+            { status: 200 }
         );
     } catch (err) {
         console.log(err);
         return NextResponse.json(
-            { message: "Blog ID does not exist." },
+            { message: `Blog ID: ${blogId} does not exist.` },
             { status: 500 }
         );
     }
  };
-// In the future, this function will be getAllBlogs by user ID.
-export const GET = async (req, res) => {
-    try {
-        const db = await initializeDb();
-        console.log("GET ALL BLOGS");
-        const blogs = await getAllBlog();
-        return NextResponse.json(blogs, { status: 200 });
-    } catch (err) {
-        console.log(err);
-        return NextResponse.json(
-            { message: "Failed to retrieve blogs." },
-            { status: 500 }
-        );
-    }
-};
+
+// // In the future, this function will be getAllBlogs by user ID.
+// export const GET = async (req, res) => {
+//     try {
+//         const db = await initializeDb();
+//         console.log("GET ALL BLOGS");
+//         const blogs = await getAllBlog();
+//         return NextResponse.json(blogs, { status: 200 });
+//     } catch (err) {
+//         console.log(err);
+//         return NextResponse.json(
+//             { message: "Failed to retrieve blogs." },
+//             { status: 500 }
+//         );
+//     }
+// };
 
 export const POST = async (req, res) => {
     try {
