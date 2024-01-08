@@ -4,25 +4,38 @@ import {
    getAllBlog,
    addBlog,
    updateBlog,
+   getBlogById,
    deleteBlog
 } from "@/database/database";
 
 // In the future, this function will be getAllBlogs by user ID.
 export const GET = async (req, res) => {
     try {
-        const db = await initializeDb();
-        console.log("GET ALL BLOGS");
-        const blogs = await getAllBlog();
-        return NextResponse.json(blogs, { status: 200 });
+        await initializeDb();
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+
+        if (id) {
+            // Logic for fetching a single blog by ID
+            console.log(`Fetching blog with ID: ${id}`);
+            const blog = await getBlogById(id);
+            if (blog) {
+                return NextResponse.json({ blog }, { status: 200 });
+            } else {
+                return NextResponse.json({ message: "Blog ID does not exist." }, { status: 404 });
+            }
+        } else {
+            // Logic for fetching all blogs
+            console.log("Fetching all blogs");
+            const blogs = await getAllBlog();
+            return NextResponse.json(blogs, { status: 200 });
+        }
     } catch (err) {
         console.log(err);
-        return NextResponse.json(
-            { message: "Failed to retrieve blogs." },
-            { status: 500 }
-        );
+        const errorMessage = id ? "Failed to fetch the blog." : "Failed to retrieve blogs.";
+        return NextResponse.json({ message: errorMessage }, { status: 500 });
     }
 };
-
 export const POST = async (req, res) => {
     try {
         await initializeDb();
