@@ -3,6 +3,7 @@ import L from "leaflet";
 import { FixedContainer } from "@/components/FixedContainer/FixedContainer";
 import { FoldablePanel } from "@/components/FoldablePanel/FoldablePanel";
 import { SearchBar } from "@/components/SearchBar/SearchBar";
+import { LongitudeAdjustButtons } from '@/components/LongitudeAdjustButtons/LongitudeAdjustButtons';
 import { geoCodeLocation } from "@/utils/geoCodeLocation";
 
 import {
@@ -16,6 +17,12 @@ import { useKeyPress } from "@/hooks/useKeyPress";
 import "leaflet/dist/leaflet.css";
 
 import styles from "@/components/MapComponent/MapComponent.module.css";
+
+const INITIAL_MAP_CENTER= {
+    lat: 38,
+    lng: -95.0,
+    zoomLevel: 5,
+}
 
 const normalIcon = new L.Icon({
     iconUrl: "/marker-icon.png",
@@ -56,7 +63,9 @@ const MapComponent = () => {
 
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-    const [searchedLocation, setSearchedLocation] = useState(null);
+    const [searchedLocation, setSearchedLocation] = useState(INITIAL_MAP_CENTER);
+
+    const [originalLng, setOriginalLng] = useState(INITIAL_MAP_CENTER.lng);
 
     const handleKeyPress = (key) => {
         switch (key) {
@@ -104,6 +113,7 @@ const MapComponent = () => {
         try {
             const result = await geoCodeLocation(searchTerm);
             setSearchedLocation(result);
+            setOriginalLng(result.lng);
             console.log('Ref', mapRef);
             if (mapRef.current) {
                 let zoomLevel;
@@ -126,6 +136,9 @@ const MapComponent = () => {
                     case 'administrative':
                         zoomLevel = 12;
                         break;
+                    case 'country':
+                        zoomLevel = 5;
+                        break;
                     default:
                         zoomLevel = 15; // default zoom level
                 }
@@ -135,6 +148,23 @@ const MapComponent = () => {
             console.error('Error during location search:', error);
         }
     };
+
+    // Event handler to adjust longitude
+    const adjustLongitude = (adjustment) => {
+        if (mapRef.current && searchedLocation) {
+            const newLng = searchedLocation.lng + adjustment;
+            mapRef.current.setView([searchedLocation.lat, newLng], mapRef.current.getZoom());
+            setSearchedLocation({...searchedLocation, lng: newLng});
+        }
+    }
+
+    // Event handler to reset to original location
+    const resetLocation = () => {
+        if (mapRef.current && searchedLocation && originalLng !== null) {
+            mapRef.current.setView([searchedLocation.lat, originalLng], mapRef.current.getZoom());
+            setSearchedLocation({...searchedLocation, lng: originalLng});
+        }
+    }
 
     const keyMap = {
         d: "d",
@@ -635,13 +665,14 @@ const MapComponent = () => {
         <div style={{ position: "relative" }}>
             <FoldablePanel>
                 <SearchBar onSearch={handleSearch} />
+                <LongitudeAdjustButtons onAdjust={adjustLongitude} onReset={resetLocation} />
             </FoldablePanel>
             <MapContainer
                 ref={(ref) => { 
                     if (ref) mapRef.current = ref; 
                 }}
-                center={[38, -95.0]}
-                zoom={5}
+                center={[INITIAL_MAP_CENTER.lat, INITIAL_MAP_CENTER.lng]}
+                zoom={INITIAL_MAP_CENTER.zoomLevel}
                 className={styles.mapContainer}
             >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
