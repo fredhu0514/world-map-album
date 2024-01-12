@@ -4,10 +4,10 @@ import {
    getBlogById
 } from "@/database/database";
 
-export const GET = async (req, res) => {
+export const GET = async (req, { params }) => {
     try {
-        const db = await initializeDb();
-        const blogId = req.query.blogId; // Extract blogId from the URL
+        await initializeDb();
+        const { blogId } = params;
         console.log(`GET BLOG WITH ID: ${blogId}`);
 
         const blog = await getBlogById(blogId); // Fetch the blog by its ID
