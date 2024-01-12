@@ -24,12 +24,11 @@ export async function initializeDb() {
         map_pin_pid TEXT NOT NULL,
         fixed_pin_pid TEXT NOT NULL
     )`);
-    await db.exec(`
-    CREATE TABLE IF NOT EXISTS blog (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      pid REAL NOT NULL,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL
+    await db.exec(`CREATE TABLE IF NOT EXISTS blog (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pid REAL NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL
     )`);
  
     return db;
@@ -121,12 +120,12 @@ export async function deletePin(pinId) {
     await db.run(`DELETE FROM pins WHERE PID = ?`, pinId);
     deleteLinesRelatedToPin(pinId);
 }
+
 /*
-   BLOG POSTS
+   BLOGs
 */
 
-
-// Function to add a new blog post
+// Function to add a new blog
 export async function addBlog(pid, title, description) {
     const db = await openDb();
     const result = await db.run(
@@ -136,14 +135,19 @@ export async function addBlog(pid, title, description) {
     return { id: result.lastID };  // Return the id of the inserted blog post
  }
  
- // Function to retrieve all blog posts
+ // Function to retrieve blog by Id
  export async function getBlogById(id) {
     const db = await openDb();
     const row = await db.get(`SELECT id, pid, title, description FROM blog WHERE id = ?`, [id]);
-    return row; // Return the single row, which is the blog post with the given pid
+    return {
+        id: row.id,
+        pid: row.pid,
+        title: row.title,
+        description: row.description
+    }; // Return the transformed single row, which is the blog with the given id
  }
  
- // Function to delete a blog post by pid
+ // Function to delete a blog post by id
  export async function deleteBlog(id) {
     const db = await openDb();
     await db.run(`DELETE FROM blog WHERE id = ?`, [id]);
@@ -160,17 +164,18 @@ export async function addBlog(pid, title, description) {
  }
 
  // Function to get all blogs
- export async function getAllBlog() {
+ export async function getAllBlogs() {
     const db = await openDb();
-    // Select only the id, pid, and title columns from the blog table
-    const rows = await db.all(`SELECT id, pid, title FROM blog`);
+    // Select only the id, pid, and title, description columns from the blog table
+    const rows = await db.all(`SELECT id, pid, title, description FROM blog`);
     
-    // Transform the data to include only id, pid, and title
+    // Transform the data to include only id, pid, title, and description
     const blogPosts = rows.map((row) => {
         return {
             id: row.id,
             pid: row.pid,
-            title: row.title
+            title: row.title,
+            description: row.description
         };
     });
     

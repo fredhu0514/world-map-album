@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
    initializeDb,
-   getAllBlog,
+   getAllBlogs,
    addBlog,
    updateBlog,
    deleteBlog
@@ -12,7 +12,7 @@ export const GET = async (req, res) => {
     try {
         const db = await initializeDb();
         console.log("GET ALL BLOGS");
-        const blogs = await getAllBlog();
+        const blogs = await getAllBlogs();
         return NextResponse.json(blogs, { status: 200 });
     } catch (err) {
         console.log(err);
