@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import {
-    initializeDb,
     getAllLines,
     addLine,
     deleteLine,
-} from "@/database/database";
+} from "@/database/lines/handler";
 
 export const GET = async (req, res) => {
     try {
-        await initializeDb();
         console.log("GET ALL Lines COOL");
         const lines = await getAllLines(); // 获取所有线
         return NextResponse.json(lines, { status: 200 });
@@ -24,7 +22,6 @@ export const GET = async (req, res) => {
 export const POST = async (req, res) => {
     try {
         console.log("POST LINE COOL");
-        await initializeDb();
         const { newLine } = await req.json();
 
         await addLine(newLine.mapPinId, newLine.fixedPinId);
@@ -40,7 +37,6 @@ export const POST = async (req, res) => {
 
 export const DELETE = async (req, res) => {
     try {
-        await initializeDb();
         const data = await req.json();
 
         await deleteLine(data.lineId);
