@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import {
-   initializeDb,
    getBlogById
-} from "@/database/database";
+} from "@/database/blogs/handler";
 
 export const GET = async (req, { params }) => {
     try {
-        await initializeDb();
         const { blogId } = params;
         console.log(`GET BLOG WITH ID: ${blogId}`);
 

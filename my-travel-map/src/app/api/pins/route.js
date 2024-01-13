@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import {
-    initializeDb,
+    deleteLinesRelatedToPin,
+} from "@/database/lines/handler";
+import {
     getAllPins,
     addPin,
     deletePin,
     updatePin,
-} from "@/database/database";
+} from "@/database/pins/handler";
 
 export const GET = async (req, res) => {
     try {
-        const db = await initializeDb();
         console.log("GET ALL COOL");
         const markers = await getAllPins();
         return NextResponse.json(markers, { status: 200 });
@@ -25,7 +26,6 @@ export const GET = async (req, res) => {
 export const POST = async (req, res) => {
     try {
         console.log("POST PIN COOL");
-        await initializeDb();
         const { newPin } = await req.json();
         await addPin({ newPin }); // 这里应处理添加逻辑
         return NextResponse.json(newPin, { status: 200 });
@@ -42,7 +42,8 @@ export const DELETE = async (req, res) => {
     try {
         console.log("DELETE PIN COOL");
         const { pinId } = await req.json();
-        await deletePin(pinId); // 这里应处理添加逻辑
+        await deletePin(pinId);
+        await deleteLinesRelatedToPin(pinId);
         return NextResponse.json(pinId, { status: 200 });
     } catch (err) {
         console.log(err);

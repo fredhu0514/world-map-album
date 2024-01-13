@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
 import {
-   initializeDb,
    getAllBlogs,
    addBlog,
    updateBlog,
    deleteBlog
-} from "@/database/database";
+} from "@/database/blogs/handler";
 
 // In the future, this function will be getAllBlogs by user ID.
 export const GET = async (req, res) => {
     try {
-        const db = await initializeDb();
         console.log("GET ALL BLOGS");
         const blogs = await getAllBlogs();
         return NextResponse.json(blogs, { status: 200 });
@@ -25,7 +23,6 @@ export const GET = async (req, res) => {
 
 export const POST = async (req, res) => {
     try {
-        await initializeDb();
         console.log("POST A NEW BLOG");
         const { pid, title, description } = await req.json();
         const newBlogId = await addBlog(pid, title, description);
@@ -44,7 +41,6 @@ export const POST = async (req, res) => {
 
  export const PUT = async (req, res) => {
     try {
-        await initializeDb();
         const { id, title, description } = await req.json();
         if (!id) {
             return NextResponse.json(
@@ -76,7 +72,6 @@ export const POST = async (req, res) => {
 
 export const DELETE = async (req, res) => {
     try {
-        await initializeDb();
         console.log("DELETE BLOG BY ID");
         const { id } = await req.json(); // Extract blog id from the request body
         await deleteBlog(id);
