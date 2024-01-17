@@ -11,7 +11,7 @@ import {
 
 export const GET = async (req, res) => {
     try {
-        console.log("GET ALL COOL");
+        console.log("GET ALL PINS");
         const markers = await getAllPins();
         return NextResponse.json(markers, { status: 200 });
     } catch (err) {
@@ -25,9 +25,10 @@ export const GET = async (req, res) => {
 
 export const POST = async (req, res) => {
     try {
-        console.log("POST PIN COOL");
+        console.log("POST A PIN");
         const { newPin } = await req.json();
-        await addPin({ newPin }); // 这里应处理添加逻辑
+        const newPinId = await addPin({ newPin }); // 这里应处理添加逻辑
+        newPin.id = newPinId;
         return NextResponse.json(newPin, { status: 200 });
     } catch (err) {
         console.log(err);
@@ -56,7 +57,7 @@ export const DELETE = async (req, res) => {
 
 export const PUT = async (req, res) => {
     try {
-        console.log("PUT PIN COOL");
+        console.log("UPDATE A PIN");
         const { pin } = await req.json();
         await updatePin({ pin }); // 这里应处理添加逻辑
         return NextResponse.json(pin, { status: 200 });
