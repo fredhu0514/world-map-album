@@ -45,7 +45,7 @@ export const DELETE = async (req, res) => {
             { status: 200 }
         );
 
-        // Some scenarios will be handled by the `pins/delete`
+        // Most scenarios will be handled by the `pins/delete`
     } catch (err) {
         console.error(err);
         return NextResponse.json(

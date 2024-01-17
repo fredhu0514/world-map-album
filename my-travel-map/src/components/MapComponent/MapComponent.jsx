@@ -556,8 +556,7 @@ const MapComponent = () => {
     */
     const addNewPin = ({ latlng, mapInstance = null, temporaryPinConversion = false } = {}) => {
         const newPin = {
-            latlng,
-            id: Date.now(),
+            latlng
         };
 
         if (isFKeyPressed && mapInstance) {
@@ -569,7 +568,6 @@ const MapComponent = () => {
                     lat: point.x,
                     lng: point.y,
                 },
-                id: newPin.id,
                 type: "fixed",
             };
 
