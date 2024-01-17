@@ -5,6 +5,8 @@ import { FoldablePanel } from "@/components/FoldablePanel/FoldablePanel";
 import { SearchBar } from "@/components/SearchBar/SearchBar";
 import { LongitudeAdjustButtons } from '@/components/LongitudeAdjustButtons/LongitudeAdjustButtons';
 import { geoCodeLocation } from "@/utils/geoCodeLocation";
+import { SearchResultTemporaryPin } from "@/components/SearchResultTemporaryMarker/SearchResultTemporaryMarker";
+import "leaflet/dist/leaflet.css";
 
 import {
     MapContainer,
@@ -67,6 +69,8 @@ const MapComponent = () => {
 
     const [originalLng, setOriginalLng] = useState(INITIAL_MAP_CENTER.lng);
 
+    const [temporaryPin, setTemporaryPin] = useState(null);
+
     const handleKeyPress = (key) => {
         switch (key) {
             case "p":
@@ -105,7 +109,7 @@ const MapComponent = () => {
         if (searchedLocation) {
             // 添加一个标记到地图上
             // 例如使用 L.marker
-            console.log('useEffect', searchedLocation);
+            console.log('Searched Location: ', searchedLocation);
         }
     }, [searchedLocation]);
 
@@ -114,6 +118,7 @@ const MapComponent = () => {
             const result = await geoCodeLocation(searchTerm);
             setSearchedLocation(result);
             setOriginalLng(result.lng);
+            setTemporaryPin([result.lat, result.lng]);
             console.log('Ref', mapRef);
             if (mapRef.current) {
                 let zoomLevel;
@@ -155,6 +160,9 @@ const MapComponent = () => {
             const newLng = searchedLocation.lng + adjustment;
             mapRef.current.setView([searchedLocation.lat, newLng], mapRef.current.getZoom());
             setSearchedLocation({...searchedLocation, lng: newLng});
+            if (temporaryPin) {
+                setTemporaryPin([searchedLocation.lat, newLng]);
+            }
         }
     }
 
@@ -163,6 +171,9 @@ const MapComponent = () => {
         if (mapRef.current && searchedLocation && originalLng !== null) {
             mapRef.current.setView([searchedLocation.lat, originalLng], mapRef.current.getZoom());
             setSearchedLocation({...searchedLocation, lng: originalLng});
+            if (temporaryPin) {
+                setTemporaryPin([searchedLocation.lat, originalLng]);
+            }
         }
     }
 
@@ -195,6 +206,29 @@ const MapComponent = () => {
         c: isCKeyPressed,
         delete: isDeleteKeyPressed,
     } = keyStates;
+
+    // Function to handle adding the temporary pin
+    const addTemporaryPinPermanently = () => {
+        // Logic to add the pin permanently
+        // Clear temporary pin
+        if (temporaryPin) {
+            const latlng = { lat: temporaryPin[0], lng: temporaryPin[1] };
+            // Call addNewPin with the correct latlng object
+            addNewPin({
+                latlng: { 
+                    lat: temporaryPin[0], 
+                    lng: temporaryPin[1] 
+                }, 
+                temporaryPinConversion: true
+            });
+        }
+        setTemporaryPin(null);
+    };
+
+    // Function to remove temporary pin
+    const removeTemporaryPin = () => {
+        setTemporaryPin(null);
+    };
 
     /*
         Use Effects
@@ -423,7 +457,10 @@ const MapComponent = () => {
         const map = useMap();
         useMapEvents({
             click(e) {
-                onAddPin(e.latlng, map); // Pass both latlng and the map instance
+                onAddPin({
+                    latlng: e.latlng, 
+                    mapInstance: map
+                }); // Pass both latlng and the map instance
             },
         });
     };
@@ -517,13 +554,13 @@ const MapComponent = () => {
     /*
         APIs Called in Event Handlers
     */
-    const addNewPin = (latlng, mapInstance) => {
+    const addNewPin = ({ latlng, mapInstance = null, temporaryPinConversion = false } = {}) => {
         const newPin = {
             latlng,
             id: Date.now(),
         };
 
-        if (isFKeyPressed) {
+        if (isFKeyPressed && mapInstance) {
             // Use mapInstance to calculate pixel position
             const point = mapInstance.latLngToContainerPoint(latlng);
             // Add the fixed pin to the fixedMarkers array
@@ -556,7 +593,7 @@ const MapComponent = () => {
                         error
                     )
                 );
-        } else if (isPKeyPressed) {
+        } else if (isPKeyPressed || temporaryPinConversion) {
             const newMapPin = { ...newPin, type: "map" };
             fetch("http://localhost:3000/api/pins", {
                 method: "POST",
@@ -678,6 +715,15 @@ const MapComponent = () => {
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <MapEvents onAddPin={addNewPin} />
                 <div>
+                    {
+                        temporaryPin && (
+                            <SearchResultTemporaryPin
+                                position={temporaryPin}
+                                onAdd={addTemporaryPinPermanently}
+                                onRemove={removeTemporaryPin}
+                            />
+                        )
+                    }
                     {markers.map(
                         (marker) =>
                             marker.type !== "fixed" && (
@@ -706,6 +752,7 @@ const MapComponent = () => {
                                 />
                             )
                     )}
+
                 </div>
                 <LineDrawer linePairs={linePairs} />
                 {/* 其他 Marker 和 TileLayer 组件 */}
