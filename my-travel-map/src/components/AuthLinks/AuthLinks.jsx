@@ -16,7 +16,7 @@ export const AuthLinks = () => {
 
     if (status === "authenticated" && session?.user) {
         return (
-            <div className={styles.profileContainer}>
+            <div className={styles.userInfoContainer}>
                 <Link href={profileUrl}>
                     <img
                         src={session.user.image || "/default-avatar.png"}
