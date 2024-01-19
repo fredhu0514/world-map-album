@@ -4,8 +4,9 @@ import { useSession } from "next-auth/react";
 
 export const AuthLinks = () => {
     const { data: session, status } = useSession();
-    const profileUrl = "/profile";
+    const profileUrl = "/user/profile";
 
+    console.log(session);
     if (status === "unauthenticated") {
         return (
             <Link href="/login">

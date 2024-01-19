@@ -1,0 +1,49 @@
+.userProfileContainer {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.userProfileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.userProfileContent {
+    margin-bottom: 20px;
+}
+
+.editButton,
+.saveButton {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.2s;
+}
+
+.editButton:hover,
+.saveButton:hover {
+    background-color: #0056b3;
+}
+
+.logoutButton {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    color: red;
+    transition: background-color 0.2s;
+}
+
+.logoutButton:hover {
+    background-color: #e2e3e5;
+}
