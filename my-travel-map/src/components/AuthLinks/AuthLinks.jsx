@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 
 export const AuthLinks = () => {
     const { data: session, status } = useSession();
+    const profileUrl = "/profile";
 
     if (status === "unauthenticated") {
         return (
@@ -14,11 +15,8 @@ export const AuthLinks = () => {
     }
 
     if (status === "authenticated" && session?.user) {
-        const profileUrl = `/profile?userId=${encodeURIComponent(
-            session?.userId
-        )}`;
         return (
-            <div className={styles.profileContainer}>
+            <div className={styles.userInfoContainer}>
                 <Link href={profileUrl}>
                     <img
                         src={session.user.image || "/default-avatar.png"}

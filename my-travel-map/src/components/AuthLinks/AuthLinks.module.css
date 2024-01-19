@@ -8,7 +8,7 @@
     text-decoration: none; /* Removes underline from the link */
 }
 
-.profileContainer {
+.userInfoContainer {
     display: flex;
     align-items: center;
 }
@@ -19,4 +19,18 @@
     border-radius: 50%; /* Makes the image circular */
     object-fit: cover; /* Ensures the image covers the area */
     border: 2px solid gray; /* Optional border */
+}
+
+.loadingPlaceholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50px; /* Adjust the height as needed */
+    width: 100%;
+    background-color: #f0f0f0; /* Light grey background */
+    color: #333; /* Dark grey text color */
+    font-size: 1em; /* Standard text size, adjust as needed */
+    text-align: center;
+    border-radius: 5px; /* Optional, for rounded corners */
+    margin: 10px 0; /* Space above and below the placeholder */
 }

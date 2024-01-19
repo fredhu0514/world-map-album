@@ -17,15 +17,6 @@ export const authOptions = {
         // }),
     ],
     adapter: PrismaAdapter(prisma),
-    callbacks: {
-        async session({ session, user, token }) {
-            // Add custom logic here
-            // For example, adding the user ID to the session
-            session.userId = user.id;
-            return session;
-        },
-        // You can add more callbacks as needed
-    },
 };
 
 export const getAuthSession = () => getServerSession(authOptions);
