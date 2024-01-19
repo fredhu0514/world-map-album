@@ -38,3 +38,39 @@
     padding: 20px;
     overflow-y: auto;
 }
+
+/* Add a minimum width to the title to prevent it from wrapping */
+.title {
+    min-width: 250px; /* Adjust the min-width as necessary */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Adjust the CSS for the panel closing animation */
+.panel:not(.open) .title {
+    /* Instead of translating the title, fade it out */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Adjust the CSS for the panel opening animation */
+.panel.open .title {
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Adjust the header container */
+.header {
+    display: flex;
+    justify-content: space-between; /* Align items to the sides of the container */
+    align-items: center; /* Center items vertically */
+    padding: 20px 20px 0 20px; /* Add padding to avoid touching the edges */
+}
+
+/* Responsive adjustments if needed */
+@media (max-width: 767px) {
+    .title {
+        font-size: 20px; /* Smaller font size for smaller screens */
+    }
+}
