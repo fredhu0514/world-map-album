@@ -6,7 +6,6 @@ export const AuthLinks = () => {
     const { data: session, status } = useSession();
     const profileUrl = "/user/profile";
 
-    console.log(session);
     if (status === "unauthenticated") {
         return (
             <Link href="/login">
