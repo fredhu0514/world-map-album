@@ -1,11 +1,35 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import L from "leaflet";
+
 import { FixedContainer } from "@/components/FixedContainer/FixedContainer";
 import { FoldablePanel } from "@/components/FoldablePanel/FoldablePanel";
 import { SearchBar } from "@/components/SearchBar/SearchBar";
 import { LongitudeAdjustButtons } from "@/components/LongitudeAdjustButtons/LongitudeAdjustButtons";
-import { geoCodeLocation } from "@/utils/geoCodeLocation";
 import { SearchResultTemporaryPin } from "@/components/SearchResultTemporaryMarker/SearchResultTemporaryMarker";
+
+import { addNewPin } from "@/utils/pins/addNewPin";
+import { deletePin } from "@/utils/pins/deletePin";
+import { updateLines } from "@/utils/lines/updateLines";
+import { geoCodeLocation } from "@/utils/geoCodeLocation";
+
+import LineDrawer from "@/hooks/lineDrawer";
+import useKeyPress from "@/hooks/useKeyPress";
+import useDragEvents from "@/hooks/useDragEvents";
+import useFetchPinsAndLines from "@/hooks/useFetchPinsAndLines";
+import useDragEventListeners from "@/hooks/useDragEventListeners";
+
+import {
+    keyPress,
+    keyRelease,
+    searchLocation,
+    adjustLongitude,
+    resetLocation,
+    keyMap,
+    markerClick,
+    addTemporaryPinPermanently,
+    onDragStart,
+} from "@/eventHandlers/eventHandlers";
+
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import {
@@ -15,7 +39,6 @@ import {
     useMapEvents,
     useMap,
 } from "react-leaflet";
-import { useKeyPress } from "@/hooks/useKeyPress";
 import "leaflet/dist/leaflet.css";
 
 import styles from "@/components/MapComponent/MapComponent.module.css";
@@ -39,13 +62,6 @@ const hoverIcon = new L.Icon({
     iconSize: [61.5, 61.5],
     iconAnchor: [15, 52.5],
 });
-
-// Get All APIs
-const fetchApi = async (url) => {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch");
-    return res.json();
-};
 
 const MapComponent = () => {
     const mapRef = useRef(null);
@@ -72,39 +88,6 @@ const MapComponent = () => {
 
     const [temporaryPin, setTemporaryPin] = useState(null);
 
-    const handleKeyPress = (key) => {
-        switch (key) {
-            case "p":
-                break;
-            case "f":
-                break;
-            case "delete":
-                break;
-            case "c":
-                break;
-            default:
-            // Other key actions
-        }
-    };
-
-    const handleKeyRelease = (key) => {
-        switch (key) {
-            case "p":
-                break;
-            case "f":
-                break;
-            case "delete":
-                break;
-            case "c":
-                setSelectedMapPin(null);
-                setSelectedFixedPin(null);
-                break;
-            default:
-            // Other key actions
-        }
-        // Other key release actions if needed
-    };
-
     // 在地图相关的部分，根据 searchedLocation 添加标记
     useEffect(() => {
         if (searchedLocation) {
@@ -115,88 +98,46 @@ const MapComponent = () => {
     }, [searchedLocation]);
 
     const handleSearch = async (searchTerm) => {
-        try {
-            const result = await geoCodeLocation(searchTerm);
-            setSearchedLocation(result);
-            setOriginalLng(result.lng);
-            setTemporaryPin([result.lat, result.lng]);
-            console.log("Ref", mapRef);
-            if (mapRef.current) {
-                let zoomLevel;
-                switch (result.type) {
-                    case "tertiary":
-                        zoomLevel = 20;
-                        break;
-                    case "landmark":
-                        zoomLevel = 17;
-                        break;
-                    case "research_institute":
-                    case "university":
-                    case "aerodrome":
-                    case "park":
-                        zoomLevel = 16;
-                        break;
-                    case "water":
-                        zoomLevel = 13;
-                        break;
-                    case "administrative":
-                        zoomLevel = 12;
-                        break;
-                    case "country":
-                        zoomLevel = 5;
-                        break;
-                    default:
-                        zoomLevel = 15; // default zoom level
-                }
-                mapRef.current.setView([result.lat, result.lng], zoomLevel);
-            }
-        } catch (error) {
-            console.error("Error during location search:", error);
-        }
+        searchLocation(
+            searchTerm,
+            geoCodeLocation,
+            setSearchedLocation,
+            setOriginalLng,
+            setTemporaryPin,
+            mapRef
+        );
     };
 
     // Event handler to adjust longitude
-    const adjustLongitude = (adjustment) => {
-        if (mapRef.current && searchedLocation) {
-            const newLng = searchedLocation.lng + adjustment;
-            mapRef.current.setView(
-                [searchedLocation.lat, newLng],
-                mapRef.current.getZoom()
-            );
-            setSearchedLocation({ ...searchedLocation, lng: newLng });
-            if (temporaryPin) {
-                setTemporaryPin([searchedLocation.lat, newLng]);
-            }
-        }
+    const handleAdjustLongitude = (adjustment) => {
+        adjustLongitude(
+            adjustment,
+            searchedLocation,
+            mapRef,
+            setSearchedLocation,
+            temporaryPin,
+            setTemporaryPin
+        );
     };
 
     // Event handler to reset to original location
-    const resetLocation = () => {
-        if (mapRef.current && searchedLocation && originalLng !== null) {
-            mapRef.current.setView(
-                [searchedLocation.lat, originalLng],
-                mapRef.current.getZoom()
-            );
-            setSearchedLocation({ ...searchedLocation, lng: originalLng });
-            if (temporaryPin) {
-                setTemporaryPin([searchedLocation.lat, originalLng]);
-            }
-        }
+    const handleResetLocation = () => {
+        resetLocation(
+            searchedLocation,
+            originalLng,
+            mapRef,
+            setSearchedLocation,
+            temporaryPin,
+            setTemporaryPin
+        );
     };
 
-    const keyMap = {
-        d: "d",
-        D: "d",
-        c: "c",
-        C: "c",
-        f: "f",
-        F: "f",
-        d: "delete",
-        D: "delete",
-        backspace: "delete",
-        Backspace: "delete",
-        delete: "delete",
-        Delete: "delete",
+    const handleKeyRelease = (key) => {
+        keyRelease(key, setSelectedMapPin, setSelectedFixedPin);
+    };
+
+    const handleKeyPress = (key) => {
+        keyPress(key);
     };
 
     const keyStates = useKeyPress(
@@ -214,23 +155,12 @@ const MapComponent = () => {
         delete: isDeleteKeyPressed,
     } = keyStates;
 
-    // Function to handle adding the temporary pin
-    const addTemporaryPinPermanently = () => {
-        // Logic to add the pin permanently
-        // Clear temporary pin
-        if (temporaryPin) {
-            const latlng = { lat: temporaryPin[0], lng: temporaryPin[1] };
-            // Call addNewPin with the correct latlng object
-            addNewPin({
-                latlng: {
-                    lat: temporaryPin[0],
-                    lng: temporaryPin[1],
-                },
-                temporaryPinConversion: true,
-            });
-        }
-        setTemporaryPin(null);
-    };
+    const handleAddTemporaryPin = () =>
+        addTemporaryPinPermanently(
+            temporaryPin,
+            handleAddNewPin,
+            setTemporaryPin
+        );
 
     // Function to remove temporary pin
     const removeTemporaryPin = () => {
@@ -242,218 +172,35 @@ const MapComponent = () => {
     */
 
     // Use isMKeyPressed to modify the dragging state
-    useEffect(() => {
-        // 键盘按下事件处理器
-        const handleKeyDown = (e) => {
-            if (e.key === "m" || e.key === "M") {
-                setIsMKeyPressed(true);
-            }
-        };
-
-        // 键盘释放事件处理器
-        const handleKeyUp = (e) => {
-            if (e.key === "m" || e.key === "M") {
-                setIsMKeyPressed(false);
-                if (draggingFixedPin) {
-                    console.log("Reset the fixed pin location.");
-                    // 如果松开 'm' 键，则重置 fixed pin 的位置
-                    setFixedMarkers((prevMarkers) =>
-                        prevMarkers.map((marker) =>
-                            marker.id === draggingFixedPin.id
-                                ? { ...marker, latlng: originalPosition }
-                                : marker
-                        )
-                    );
-                    // 同时重置相关线条到原始位置
-                    setLinePairs((prevLinePairs) =>
-                        prevLinePairs.map((pair) => {
-                            if (pair.fixedPin.id === draggingFixedPin.id) {
-                                return {
-                                    ...pair,
-                                    fixedPin: {
-                                        ...pair.fixedPin,
-                                        latlng: originalPosition,
-                                    },
-                                };
-                            }
-                            return pair;
-                        })
-                    );
-                    setDraggingFixedPin(null);
-                    setOriginalPosition(null);
-                }
-            }
-        };
-
-        // 全局鼠标抬起事件处理器
-        const handleGlobalMouseUp = (e) => {
-            if (draggingFixedPin) {
-                // 拖拽结束时的逻辑
-                const newLatlng = {
-                    lat: e.clientX,
-                    lng: e.clientY,
-                };
-
-                // Backend-related code
-                fetch("http://localhost:3000/api/pins", {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        pin: {
-                            id: draggingFixedPin.id,
-                            latlng: newLatlng,
-                            type: "fixed",
-                        },
-                    }),
-                })
-                    .then((response) => response.json())
-                    .then(() => {
-                        // 更新 fixed pin 位置
-                        setFixedMarkers((prevMarkers) =>
-                            prevMarkers.map((m) =>
-                                m.id === draggingFixedPin.id
-                                    ? { ...m, latlng: newLatlng }
-                                    : m
-                            )
-                        );
-                    })
-                    .then(() => {
-                        // 更新与该 fixed pin 相关联的线的位置
-                        setLinePairs((prevLinePairs) =>
-                            prevLinePairs.map((pair) => {
-                                if (pair.fixedPin.id === draggingFixedPin.id) {
-                                    return {
-                                        ...pair,
-                                        fixedPin: {
-                                            ...pair.fixedPin,
-                                            latlng: newLatlng,
-                                        },
-                                    };
-                                }
-                                return pair;
-                            })
-                        );
-                    })
-                    .catch((error) =>
-                        console.error(
-                            "[ERROR] Failed to update the pin{",
-                            draggingFixedPin.id,
-                            "}. Error: :",
-                            error
-                        )
-                    );
-
-                // 重置拖拽状态
-                setDraggingFixedPin(null);
-                setOriginalPosition(null);
-            }
-        };
-
-        // 添加键盘事件监听器
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-
-        // 添加全局鼠标抬起事件监听器（如果有拖拽进行中）
-        if (draggingFixedPin) {
-            window.addEventListener("mouseup", handleGlobalMouseUp);
-        }
-
-        // 清理函数：移除事件监听器
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-            window.removeEventListener("mouseup", handleGlobalMouseUp);
-        };
-    }, [draggingFixedPin, originalPosition, isMKeyPressed]);
+    useDragEvents(
+        setFixedMarkers,
+        setLinePairs,
+        draggingFixedPin,
+        setDraggingFixedPin,
+        originalPosition,
+        setOriginalPosition,
+        isMKeyPressed,
+        setIsMKeyPressed
+    );
 
     // Keep track of the markers
-    useEffect(() => {
-        const fetchPinsAndLines = async () => {
-            try {
-                // Fetch and set pins
-                const receivedMarkers = await fetchApi(
-                    "http://localhost:3000/api/pins"
-                );
-                const mapPins = receivedMarkers.filter(
-                    (marker) => marker.type === "map"
-                );
-                const fixedPins = receivedMarkers.filter(
-                    (marker) => marker.type === "fixed"
-                );
-
-                setMarkers(mapPins);
-                setFixedMarkers(fixedPins);
-
-                // Fetch and process lines
-                const receivedLines = await fetchApi(
-                    "http://localhost:3000/api/lines"
-                );
-                const lines = receivedLines.map((line) => {
-                    return {
-                        mapPin: mapPins.find(
-                            (marker) => marker.id === line.map_pin_id
-                        ),
-                        fixedPin: fixedPins.find(
-                            (marker) => marker.id === line.fixed_pin_id
-                        ),
-                    };
-                });
-                setLinePairs(lines);
-            } catch (error) {
-                console.error("Error fetching pins and lines: ", error);
-            }
-        };
-
-        fetchPinsAndLines();
-    }, []);
+    useFetchPinsAndLines(setMarkers, setFixedMarkers, setLinePairs);
 
     /*
         Event Handlers 
     */
 
     const handleMarkerClick = (marker) => {
-        if (!isCKeyPressed) return;
-
-        if (marker.type === "map") {
-            setSelectedMapPin(marker);
-        } else if (marker.type === "fixed") {
-            setSelectedFixedPin(marker);
-        }
-
-        if (selectedMapPin && selectedFixedPin) {
-            // Add line to backend and update frontend
-            fetch("http://localhost:3000/api/lines", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    newLine: {
-                        mapPinId: selectedMapPin.id,
-                        fixedPinId: selectedFixedPin.id,
-                    },
-                }),
-            })
-                .then((response) => response.json())
-                .then((addedLine) => {
-                    setLinePairs([
-                        ...linePairs,
-                        {
-                            mapPin: selectedMapPin,
-                            fixedPin: selectedFixedPin,
-                        },
-                    ]);
-                })
-                .catch((error) =>
-                    console.error(
-                        "[ERROR] Failed to add a new line. Error: ",
-                        error
-                    )
-                );
-
-            setSelectedMapPin(null);
-            setSelectedFixedPin(null);
-        }
+        markerClick(
+            marker,
+            isCKeyPressed,
+            selectedMapPin,
+            selectedFixedPin,
+            setLinePairs,
+            linePairs,
+            setSelectedMapPin,
+            setSelectedFixedPin
+        );
     };
 
     // 使用 useCallback 来确保在组件的整个生命周期内 handleMouseMove 是同一个函数实例
@@ -466,22 +213,11 @@ const MapComponent = () => {
                 console.log("Mouse moved during dragging", mousePosition);
 
                 // 更新与拖拽 pin 相关的线条
-                setLinePairs((prevLinePairs) =>
-                    prevLinePairs.map((pair) => {
-                        if (pair.fixedPin.id === draggingFixedPin.id) {
-                            return {
-                                ...pair,
-                                fixedPin: {
-                                    ...pair.fixedPin,
-                                    latlng: {
-                                        lat: e.clientX,
-                                        lng: e.clientY,
-                                    },
-                                },
-                            };
-                        }
-                        return pair;
-                    })
+                updateLines(
+                    setLinePairs,
+                    draggingFixedPin,
+                    e.clientX,
+                    e.clientY
                 );
             }
         },
@@ -489,30 +225,17 @@ const MapComponent = () => {
     );
 
     // 在 useEffect 中添加和移除事件监听器
-    useEffect(() => {
-        // 只有在拖拽 fixed pin 时才监听 mousemove 事件
-        if (draggingFixedPin) {
-            window.addEventListener("mousemove", handleMouseMove);
-        }
-
-        // 清理函数
-        return () => {
-            if (draggingFixedPin) {
-                window.removeEventListener("mousemove", handleMouseMove);
-            }
-        };
-    }, [draggingFixedPin, handleMouseMove]); // 依赖 draggingFixedPin 和 handleMouseMove
+    useDragEventListeners(draggingFixedPin, handleMouseMove);
 
     // Used in FixedMarker component
-    const handleDragStart = (e, marker) => {
-        e.preventDefault();
-        if (isMKeyPressed && !draggingFixedPin) {
-            // && !draggingFixedPin --》 保证只有一个 fixed pin 被拖拽
-            console.log("Rly manipulating it now.");
-            setOriginalPosition(marker.latlng);
-            setDraggingFixedPin(marker);
-        }
-    };
+    const handleDragStart = (e, marker) =>
+        onDragStart(
+            e,
+            marker,
+            isMKeyPressed,
+            setOriginalPosition,
+            setDraggingFixedPin
+        );
 
     // Handler of useMapEvents
     const MapEvents = ({ onAddPin }) => {
@@ -528,238 +251,31 @@ const MapComponent = () => {
     };
 
     /*
-        Renderings
-    */
-    const calculateScreenPosition = (pin, mapInstance) => {
-        if (pin.type === "map") {
-            const point = mapInstance.latLngToContainerPoint(pin.latlng);
-            return point;
-        } else if (pin.type === "fixed") {
-            // fixed pin 的 latlng 已经是屏幕坐标
-            return { x: pin.latlng.lat, y: pin.latlng.lng };
-        } else {
-            throw new Error(
-                "Unknown pin type, cannot calculate screen position."
-            );
-        }
-    };
-
-    const LineDrawer = ({ linePairs }) => {
-        const map = useMap();
-        const [updatedLinePairs, setUpdatedLinePairs] = useState([]);
-
-        useEffect(() => {
-            console.log("Updated inside", mousePosition);
-            const updateLines = () => {
-                const newLinePairs = linePairs.map((pair) => {
-                    return {
-                        ...pair,
-                        mapPinPosition: calculateScreenPosition(
-                            pair.mapPin,
-                            map
-                        ),
-                        fixedPinPosition: calculateScreenPosition(
-                            pair.fixedPin,
-                            map
-                        ),
-                    };
-                });
-
-                // 确保所有位置都已计算
-                if (
-                    newLinePairs.every(
-                        (pair) => pair.mapPinPosition && pair.fixedPinPosition
-                    )
-                ) {
-                    setUpdatedLinePairs(newLinePairs);
-                }
-            };
-
-            map.on("move", updateLines);
-            map.on("zoom", updateLines);
-
-            // 初始更新
-            updateLines();
-
-            return () => {
-                map.off("move", updateLines);
-                map.off("zoom", updateLines);
-            };
-        }, [map, linePairs]);
-
-        return (
-            <svg
-                style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    height: "100%",
-                    width: "100%",
-                    zIndex: 1000,
-                    pointerEvents: "none",
-                }}
-            >
-                {updatedLinePairs.map((pair, index) => (
-                    <line
-                        key={index}
-                        x1={pair.mapPinPosition?.x}
-                        y1={pair.mapPinPosition?.y}
-                        x2={pair.fixedPinPosition?.x}
-                        y2={pair.fixedPinPosition?.y}
-                        stroke="#9E1030"
-                        strokeWidth="2"
-                    />
-                ))}
-            </svg>
-        );
-    };
-
-    /*
         APIs Called in Event Handlers
     */
-    const addNewPin = ({
+    const handleAddNewPin = ({
         latlng,
         mapInstance = null,
         temporaryPinConversion = false,
     } = {}) => {
-        const newPin = {
+        addNewPin({
             latlng,
-        };
-
-        if (isFKeyPressed && mapInstance) {
-            // Use mapInstance to calculate pixel position
-            const point = mapInstance.latLngToContainerPoint(latlng);
-            // Add the fixed pin to the fixedMarkers array
-            const newFixedPin = {
-                latlng: {
-                    lat: point.x,
-                    lng: point.y,
-                },
-                type: "fixed",
-            };
-
-            fetch("http://localhost:3000/api/pins", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ newPin: newFixedPin }),
-            })
-                .then((response) => response.json())
-                .then((addedPin) =>
-                    setFixedMarkers((prevFixedMarkers) => [
-                        ...prevFixedMarkers,
-                        addedPin,
-                    ])
-                )
-                .catch((error) =>
-                    console.error(
-                        "[ERROR] Failed to add a new fixed pin. Error: ",
-                        error
-                    )
-                );
-        } else if (isPKeyPressed || temporaryPinConversion) {
-            const newMapPin = { ...newPin, type: "map" };
-            fetch("http://localhost:3000/api/pins", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ newPin: newMapPin }),
-            })
-                .then((response) => response.json())
-                .then((addedPin) =>
-                    setMarkers((prevMarkers) => [...prevMarkers, addedPin])
-                )
-                .catch((error) =>
-                    console.error(
-                        "[ERROR] Failed to add a new map pin. Error: ",
-                        error
-                    )
-                );
-        }
+            mapInstance,
+            temporaryPinConversion,
+            isFKeyPressed,
+            isPKeyPressed,
+            setFixedMarkers,
+            setMarkers,
+        });
     };
 
-    const deletePin = async (pinToDelete) => {
-        console.log("[INFO] DELETE", pinToDelete.id, pinToDelete.type);
-        if (pinToDelete.type === "map") {
-            // 删除端点并更新连线
-            setMarkers((prevMarkers) =>
-                prevMarkers.filter((marker) => marker.id !== pinToDelete.id)
-            );
-            setLinePairs((prevPairs) =>
-                prevPairs.filter((pair) => pair.mapPin.id !== pinToDelete.id)
-            );
-            // Backend-related code
-            fetch("http://localhost:3000/api/pins", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ pinId: pinToDelete.id }),
-            })
-                .then((response) => response.json())
-                .then(() =>
-                    setMarkers((prevMarkers) =>
-                        prevMarkers.filter(
-                            (marker) => marker.id !== pinToDelete.id
-                        )
-                    )
-                )
-                .then(() => {
-                    setLinePairs(
-                        linePairs.filter(
-                            (pair) =>
-                                pair.mapPin.id !== pinToDelete.id &&
-                                pair.fixedPin.id !== pinToDelete.id
-                        )
-                    );
-                })
-                .catch((error) =>
-                    console.error(
-                        "[ERROR] Failed to delete the pin{",
-                        pinToDelete.id,
-                        pinToDelete.type,
-                        "}. Error: :",
-                        error
-                    )
-                );
-        } else if (pinToDelete.type === "fixed") {
-            // 删除端点并更新连线
-            setFixedMarkers((prevMarkers) =>
-                prevMarkers.filter((marker) => marker.id !== pinToDelete.id)
-            );
-            setLinePairs((prevPairs) =>
-                prevPairs.filter((pair) => pair.fixedPin.id !== pinToDelete.id)
-            );
-            // Backend-related code
-            fetch("http://localhost:3000/api/pins", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ pinId: pinToDelete.id }),
-            })
-                .then((response) => response.json())
-                .then(() =>
-                    setFixedMarkers((prevMarkers) =>
-                        prevMarkers.filter(
-                            (marker) => marker.id !== pinToDelete.id
-                        )
-                    )
-                )
-                .catch((error) =>
-                    console.error(
-                        "[ERROR] Failed to delete the pin{",
-                        pinToDelete.id,
-                        pinToDelete.type,
-                        "}. Error: :",
-                        error
-                    )
-                );
-        } else {
-            console.log("[ERROR] Cannot delete this one on backend.");
-        }
+    const handleDeletePin = async (pinToDelete) => {
+        deletePin({
+            pinToDelete,
+            setMarkers,
+            setLinePairs,
+            setFixedMarkers,
+        });
     };
 
     // HTML Renderings
@@ -768,8 +284,8 @@ const MapComponent = () => {
             <FoldablePanel>
                 <SearchBar onSearch={handleSearch} />
                 <LongitudeAdjustButtons
-                    onAdjust={adjustLongitude}
-                    onReset={resetLocation}
+                    onAdjust={handleAdjustLongitude}
+                    onReset={handleResetLocation}
                 />
             </FoldablePanel>
             <MapContainer
@@ -781,12 +297,12 @@ const MapComponent = () => {
                 className={styles.mapContainer}
             >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <MapEvents onAddPin={addNewPin} />
+                <MapEvents onAddPin={handleAddNewPin} />
                 <div>
                     {temporaryPin && (
                         <SearchResultTemporaryPin
                             position={temporaryPin}
-                            onAdd={addTemporaryPinPermanently}
+                            onAdd={handleAddTemporaryPin}
                             onRemove={removeTemporaryPin}
                         />
                     )}
@@ -811,7 +327,7 @@ const MapComponent = () => {
                                         mouseout: () => setSelectedMarker(null),
                                         dblclick: () => {
                                             if (isDeleteKeyPressed) {
-                                                deletePin(marker);
+                                                handleDeletePin(marker);
                                             }
                                         },
                                     }}
@@ -827,7 +343,7 @@ const MapComponent = () => {
                 selectedMarker={selectedMarker}
                 handleMarkerClick={handleMarkerClick}
                 setSelectedMarker={setSelectedMarker}
-                deletePin={deletePin}
+                deletePin={handleDeletePin}
                 isDeleteKeyPressed={isDeleteKeyPressed}
                 handleDragStart={handleDragStart}
                 draggingFixedPin={draggingFixedPin}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export const useKeyPress = (targetKeys, keyMap, handleKeyPress = null, handleKeyRelease = null) => {
+const useKeyPress = (targetKeys, keyMap, handleKeyPress = null, handleKeyRelease = null) => {
     const [keyStates, setKeyStates] = useState(
         Object.fromEntries(targetKeys.map(key => [key, false]))
     );
@@ -45,3 +45,5 @@ export const useKeyPress = (targetKeys, keyMap, handleKeyPress = null, handleKey
 
     return keyStates;
 };
+
+export default useKeyPress;
