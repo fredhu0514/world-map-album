@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
 import { FixedContainer } from "@/components/FixedContainer/FixedContainer";
 import { FoldablePanel } from "@/components/FoldablePanel/FoldablePanel";
 import { SearchBar } from "@/components/SearchBar/SearchBar";
-import { LongitudeAdjustButtons } from '@/components/LongitudeAdjustButtons/LongitudeAdjustButtons';
+import { LongitudeAdjustButtons } from "@/components/LongitudeAdjustButtons/LongitudeAdjustButtons";
 import { geoCodeLocation } from "@/utils/geoCodeLocation";
 import { SearchResultTemporaryPin } from "@/components/SearchResultTemporaryMarker/SearchResultTemporaryMarker";
 import "leaflet/dist/leaflet.css";
@@ -20,11 +20,11 @@ import "leaflet/dist/leaflet.css";
 
 import styles from "@/components/MapComponent/MapComponent.module.css";
 
-const INITIAL_MAP_CENTER= {
+const INITIAL_MAP_CENTER = {
     lat: 38,
     lng: -95.0,
     zoomLevel: 5,
-}
+};
 
 const normalIcon = new L.Icon({
     iconUrl: "/marker-icon.png",
@@ -65,7 +65,8 @@ const MapComponent = () => {
 
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-    const [searchedLocation, setSearchedLocation] = useState(INITIAL_MAP_CENTER);
+    const [searchedLocation, setSearchedLocation] =
+        useState(INITIAL_MAP_CENTER);
 
     const [originalLng, setOriginalLng] = useState(INITIAL_MAP_CENTER.lng);
 
@@ -109,7 +110,7 @@ const MapComponent = () => {
         if (searchedLocation) {
             // 添加一个标记到地图上
             // 例如使用 L.marker
-            console.log('Searched Location: ', searchedLocation);
+            console.log("Searched Location: ", searchedLocation);
         }
     }, [searchedLocation]);
 
@@ -119,29 +120,29 @@ const MapComponent = () => {
             setSearchedLocation(result);
             setOriginalLng(result.lng);
             setTemporaryPin([result.lat, result.lng]);
-            console.log('Ref', mapRef);
+            console.log("Ref", mapRef);
             if (mapRef.current) {
                 let zoomLevel;
-                switch(result.type) {
-                    case 'tertiary':
+                switch (result.type) {
+                    case "tertiary":
                         zoomLevel = 20;
                         break;
-                    case 'landmark':
+                    case "landmark":
                         zoomLevel = 17;
                         break;
-                    case 'research_institute':
-                    case 'university':
-                    case 'aerodrome': 
-                    case 'park': 
+                    case "research_institute":
+                    case "university":
+                    case "aerodrome":
+                    case "park":
                         zoomLevel = 16;
                         break;
-                    case 'water':
+                    case "water":
                         zoomLevel = 13;
                         break;
-                    case 'administrative':
+                    case "administrative":
                         zoomLevel = 12;
                         break;
-                    case 'country':
+                    case "country":
                         zoomLevel = 5;
                         break;
                     default:
@@ -150,7 +151,7 @@ const MapComponent = () => {
                 mapRef.current.setView([result.lat, result.lng], zoomLevel);
             }
         } catch (error) {
-            console.error('Error during location search:', error);
+            console.error("Error during location search:", error);
         }
     };
 
@@ -158,24 +159,30 @@ const MapComponent = () => {
     const adjustLongitude = (adjustment) => {
         if (mapRef.current && searchedLocation) {
             const newLng = searchedLocation.lng + adjustment;
-            mapRef.current.setView([searchedLocation.lat, newLng], mapRef.current.getZoom());
-            setSearchedLocation({...searchedLocation, lng: newLng});
+            mapRef.current.setView(
+                [searchedLocation.lat, newLng],
+                mapRef.current.getZoom()
+            );
+            setSearchedLocation({ ...searchedLocation, lng: newLng });
             if (temporaryPin) {
                 setTemporaryPin([searchedLocation.lat, newLng]);
             }
         }
-    }
+    };
 
     // Event handler to reset to original location
     const resetLocation = () => {
         if (mapRef.current && searchedLocation && originalLng !== null) {
-            mapRef.current.setView([searchedLocation.lat, originalLng], mapRef.current.getZoom());
-            setSearchedLocation({...searchedLocation, lng: originalLng});
+            mapRef.current.setView(
+                [searchedLocation.lat, originalLng],
+                mapRef.current.getZoom()
+            );
+            setSearchedLocation({ ...searchedLocation, lng: originalLng });
             if (temporaryPin) {
                 setTemporaryPin([searchedLocation.lat, originalLng]);
             }
         }
-    }
+    };
 
     const keyMap = {
         d: "d",
@@ -215,11 +222,11 @@ const MapComponent = () => {
             const latlng = { lat: temporaryPin[0], lng: temporaryPin[1] };
             // Call addNewPin with the correct latlng object
             addNewPin({
-                latlng: { 
-                    lat: temporaryPin[0], 
-                    lng: temporaryPin[1] 
-                }, 
-                temporaryPinConversion: true
+                latlng: {
+                    lat: temporaryPin[0],
+                    lng: temporaryPin[1],
+                },
+                temporaryPinConversion: true,
             });
         }
         setTemporaryPin(null);
@@ -256,6 +263,21 @@ const MapComponent = () => {
                                 ? { ...marker, latlng: originalPosition }
                                 : marker
                         )
+                    );
+                    // 同时重置相关线条到原始位置
+                    setLinePairs((prevLinePairs) =>
+                        prevLinePairs.map((pair) => {
+                            if (pair.fixedPin.id === draggingFixedPin.id) {
+                                return {
+                                    ...pair,
+                                    fixedPin: {
+                                        ...pair.fixedPin,
+                                        latlng: originalPosition,
+                                    },
+                                };
+                            }
+                            return pair;
+                        })
                     );
                     setDraggingFixedPin(null);
                     setOriginalPosition(null);
@@ -327,9 +349,6 @@ const MapComponent = () => {
                 setDraggingFixedPin(null);
                 setOriginalPosition(null);
             }
-
-            // 停止追踪鼠标移动
-            window.removeEventListener("mousemove", handleMouseMove);
         };
 
         // 添加键盘事件监听器
@@ -437,19 +456,62 @@ const MapComponent = () => {
         }
     };
 
-    const handleMouseMove = (e) => {
-        setMousePosition({ x: e.clientX, y: e.clientY });
-    };
+    // 使用 useCallback 来确保在组件的整个生命周期内 handleMouseMove 是同一个函数实例
+    const handleMouseMove = useCallback(
+        (e) => {
+            if (draggingFixedPin) {
+                // 只在拖拽状态下更新 mousePosition
+                setMousePosition({ x: e.clientX, y: e.clientY });
+                console.log("Dragging", draggingFixedPin);
+                console.log("Mouse moved during dragging", mousePosition);
+
+                // 更新与拖拽 pin 相关的线条
+                setLinePairs((prevLinePairs) =>
+                    prevLinePairs.map((pair) => {
+                        if (pair.fixedPin.id === draggingFixedPin.id) {
+                            return {
+                                ...pair,
+                                fixedPin: {
+                                    ...pair.fixedPin,
+                                    latlng: {
+                                        lat: e.clientX,
+                                        lng: e.clientY,
+                                    },
+                                },
+                            };
+                        }
+                        return pair;
+                    })
+                );
+            }
+        },
+        [draggingFixedPin]
+    );
+
+    // 在 useEffect 中添加和移除事件监听器
+    useEffect(() => {
+        // 只有在拖拽 fixed pin 时才监听 mousemove 事件
+        if (draggingFixedPin) {
+            window.addEventListener("mousemove", handleMouseMove);
+        }
+
+        // 清理函数
+        return () => {
+            if (draggingFixedPin) {
+                window.removeEventListener("mousemove", handleMouseMove);
+            }
+        };
+    }, [draggingFixedPin, handleMouseMove]); // 依赖 draggingFixedPin 和 handleMouseMove
 
     // Used in FixedMarker component
     const handleDragStart = (e, marker) => {
         e.preventDefault();
         if (isMKeyPressed && !draggingFixedPin) {
+            // && !draggingFixedPin --》 保证只有一个 fixed pin 被拖拽
             console.log("Rly manipulating it now.");
             setOriginalPosition(marker.latlng);
             setDraggingFixedPin(marker);
         }
-        window.addEventListener("mousemove", handleMouseMove);
     };
 
     // Handler of useMapEvents
@@ -458,8 +520,8 @@ const MapComponent = () => {
         useMapEvents({
             click(e) {
                 onAddPin({
-                    latlng: e.latlng, 
-                    mapInstance: map
+                    latlng: e.latlng,
+                    mapInstance: map,
                 }); // Pass both latlng and the map instance
             },
         });
@@ -487,6 +549,7 @@ const MapComponent = () => {
         const [updatedLinePairs, setUpdatedLinePairs] = useState([]);
 
         useEffect(() => {
+            console.log("Updated inside", mousePosition);
             const updateLines = () => {
                 const newLinePairs = linePairs.map((pair) => {
                     return {
@@ -554,9 +617,13 @@ const MapComponent = () => {
     /*
         APIs Called in Event Handlers
     */
-    const addNewPin = ({ latlng, mapInstance = null, temporaryPinConversion = false } = {}) => {
+    const addNewPin = ({
+        latlng,
+        mapInstance = null,
+        temporaryPinConversion = false,
+    } = {}) => {
         const newPin = {
-            latlng
+            latlng,
         };
 
         if (isFKeyPressed && mapInstance) {
@@ -700,11 +767,14 @@ const MapComponent = () => {
         <div style={{ position: "relative" }}>
             <FoldablePanel>
                 <SearchBar onSearch={handleSearch} />
-                <LongitudeAdjustButtons onAdjust={adjustLongitude} onReset={resetLocation} />
+                <LongitudeAdjustButtons
+                    onAdjust={adjustLongitude}
+                    onReset={resetLocation}
+                />
             </FoldablePanel>
             <MapContainer
-                ref={(ref) => { 
-                    if (ref) mapRef.current = ref; 
+                ref={(ref) => {
+                    if (ref) mapRef.current = ref;
                 }}
                 center={[INITIAL_MAP_CENTER.lat, INITIAL_MAP_CENTER.lng]}
                 zoom={INITIAL_MAP_CENTER.zoomLevel}
@@ -713,15 +783,13 @@ const MapComponent = () => {
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <MapEvents onAddPin={addNewPin} />
                 <div>
-                    {
-                        temporaryPin && (
-                            <SearchResultTemporaryPin
-                                position={temporaryPin}
-                                onAdd={addTemporaryPinPermanently}
-                                onRemove={removeTemporaryPin}
-                            />
-                        )
-                    }
+                    {temporaryPin && (
+                        <SearchResultTemporaryPin
+                            position={temporaryPin}
+                            onAdd={addTemporaryPinPermanently}
+                            onRemove={removeTemporaryPin}
+                        />
+                    )}
                     {markers.map(
                         (marker) =>
                             marker.type !== "fixed" && (
@@ -750,7 +818,6 @@ const MapComponent = () => {
                                 />
                             )
                     )}
-
                 </div>
                 <LineDrawer linePairs={linePairs} />
                 {/* 其他 Marker 和 TileLayer 组件 */}
