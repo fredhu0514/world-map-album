@@ -2,55 +2,123 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
 }
 
 model Account {
-  id                String  @id @default(cuid()) @map("_id")
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+    id                String  @id @default(cuid()) @map("_id")
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+    @@unique([provider, providerAccountId])
 }
 
 model Session {
-  id           String   @id @default(cuid()) @map("_id")
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    id           String   @id @default(cuid()) @map("_id")
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id                    String           @id @default(cuid()) @map("_id")
-  name                  String?
-  email                 String           @unique
-  emailVerified         DateTime?
-  image                 String?
-  accounts              Account[]
-  sessions              Session[]
+    id               String           @id @default(cuid()) @map("_id")
+    name             String?
+    email            String           @unique
+    emailVerified    DateTime?
+    image            String?
+    joinedDate       DateTime         @default(now())
+    accounts         Account[]
+    sessions         Session[]
+    visitedCountries VisitedCountry[]
+    userProfile      UserProfile[]
+    userSetting      UserSetting[]
+    MapComponents    MapComponent[]
+}
+
+model UserProfile {
+    id          String       @id @default(cuid()) @map("_id")
+    bio         String?
+    role        String?
+    location    String?
+    socialLinks SocialLink[]
+    user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId      String       @unique
+}
+
+model UserSetting {
+    id                  String  @id @default(cuid()) @map("_id")
+    defaultCenterLatLng Float[]
+    defaultZoom         Int
+    user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId              String  @unique
+}
+
+model SocialLink {
+    id            String      @id @default(cuid()) @map("_id")
+    platform      String
+    icon          String
+    link          String
+    userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+    userProfileId String
+}
+
+model VisitedCountry {
+    id     String @id @default(cuid()) @map("_id")
+    name   String
+    icon   String
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
 }
 
 model VerificationToken {
-  identifier String   @id @map("_id")
-  token      String   @unique
-  expires    DateTime
+    identifier String   @id @map("_id")
+    token      String   @unique
+    expires    DateTime
 
-  @@unique([identifier, token])
+    @@unique([identifier, token])
+}
+
+// Map Component Models
+model MapComponent {
+    id     String @id @default(cuid()) @map("_id")
+    pins   Pin[]
+    lines  Line[]
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId String @unique
+}
+
+model Pin {
+    id              String       @id @default(cuid()) @map("_id")
+    lat             Float
+    lng             Float
+    createdDatetime DateTime     @default(now())
+    updatedDatetime DateTime     @default(now())
+    type            String
+    mapComponent    MapComponent @relation(fields: [mapComponentId], references: [id], onDelete: Cascade)
+    mapComponentId  String
+}
+
+model Line {
+    id             String       @id @default(cuid()) @map("_id")
+    map_pin_id     String
+    fixed_pin_id   String
+    mapComponent   MapComponent @relation(fields: [mapComponentId], references: [id], onDelete: Cascade)
+    mapComponentId String
 }
