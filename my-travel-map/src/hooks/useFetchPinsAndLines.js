@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { fetchApi } from "@/utils/fetchApi";
+import { getUniqueCountryNames } from "@/utils/openStreetMap/getCountriesByPins";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -16,6 +17,8 @@ const useFetchPinsAndLines = (
                 const mapPins = receivedMarkers.filter(
                     (marker) => marker.type === "map"
                 );
+                // const countries = await getUniqueCountryNames(mapPins);
+                // console.log("Countries: ", countries);
                 const fixedPins = receivedMarkers.filter(
                     (marker) => marker.type === "fixed"
                 );

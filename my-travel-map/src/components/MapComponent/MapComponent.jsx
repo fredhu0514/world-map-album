@@ -9,7 +9,7 @@ import { SearchResultTemporaryPin } from "@/components/SearchResultTemporaryMark
 import { addNewPin } from "@/utils/pins/addNewPin";
 import { deletePin } from "@/utils/pins/deletePin";
 import { updateLines } from "@/utils/lines/updateLines";
-import { geoCodeLocation } from "@/utils/geoCodeLocation";
+import { geoCodeLocation } from "@/utils/openStreetMap/geoCodeLocation";
 
 import LineDrawer from "@/hooks/lineDrawer";
 import useKeyPress from "@/hooks/useKeyPress";
