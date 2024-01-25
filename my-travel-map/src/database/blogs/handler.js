@@ -5,11 +5,11 @@ import { openDb } from "@/database/database";
 */
 
 // Function to add a new blog
-export async function addBlog(pid, title, description) {
+export async function addBlog(timestamp, title, description) {
     const db = await openDb();
     const result = await db.run(
-        `INSERT INTO blog (pid, title, description) VALUES (?, ?, ?)`,
-        [pid, title, description]
+        `INSERT INTO blog (timestamp, title, description) VALUES (?, ?, ?)`,
+        [timestamp, title, description]
     );
     return { id: result.lastID };  // Return the id of the inserted blog post
  }
@@ -17,10 +17,10 @@ export async function addBlog(pid, title, description) {
  // Function to retrieve blog by Id
  export async function getBlogById(id) {
     const db = await openDb();
-    const row = await db.get(`SELECT id, pid, title, description FROM blog WHERE id = ?`, [id]);
+    const row = await db.get(`SELECT id, timestamp, title, description FROM blog WHERE id = ?`, [id]);
     return {
         id: row.id,
-        pid: row.pid,
+        timestamp: row.timestamp,
         title: row.title,
         description: row.description
     }; // Return the transformed single row, which is the blog with the given id
@@ -45,14 +45,14 @@ export async function addBlog(pid, title, description) {
  // Function to get all blogs
  export async function getAllBlogs() {
     const db = await openDb();
-    // Select only the id, pid, and title, description columns from the blog table
-    const rows = await db.all(`SELECT id, pid, title, description FROM blog`);
+    // Select only the id, timestamp, and title, description columns from the blog table
+    const rows = await db.all(`SELECT id, timestamp, title, description FROM blog`);
     
-    // Transform the data to include only id, pid, title, and description
+    // Transform the data to include only id, timestamp, title, and description
     const blogPosts = rows.map((row) => {
         return {
             id: row.id,
-            pid: row.pid,
+            timestamp: row.timestamp,
             title: row.title,
             description: row.description
         };

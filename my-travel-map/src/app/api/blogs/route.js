@@ -24,8 +24,8 @@ export const GET = async (req, res) => {
 export const POST = async (req, res) => {
     try {
         console.log("POST A NEW BLOG");
-        const { pid, title, description } = await req.json();
-        const newBlogId = await addBlog(pid, title, description);
+        const { timestamp, title, description } = await req.json();
+        const newBlogId = await addBlog(timestamp, title, description);
         return NextResponse.json(
             { newBlogId: newBlogId }, 
             { status: 201 }
@@ -44,7 +44,7 @@ export const POST = async (req, res) => {
         const { id, title, description } = await req.json();
         if (!id) {
             return NextResponse.json(
-                { message: "No pid provided for updating" },
+                { message: "No timestamp provided for updating" },
                 { status: 404 }
             );
         }
